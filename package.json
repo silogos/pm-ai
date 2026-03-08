@@ -1,0 +1,30 @@
+{
+  "name": "pm-ai-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for storing and managing project plans and tasks",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "create-project": "tsx src/scripts/createProject.ts"
+  },
+  "keywords": ["mcp", "project-management", "ai"],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "drizzle-orm": "^0.38.4",
+    "better-sqlite3": "^11.8.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.13.10",
+    "drizzle-kit": "^0.30.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3"
+  }
+}
