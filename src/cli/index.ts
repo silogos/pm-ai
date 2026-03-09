@@ -114,6 +114,82 @@ const commands = {
     }
   },
 
+  'config:set': async (args: string[]) => {
+    const [key, value] = args;
+    if (!key || !value) {
+      console.error('Usage: pm-ai config:set <key> <value>');
+      process.exit(1);
+    }
+
+    const validKeys = ['dbPath'];
+    if (!validKeys.includes(key)) {
+      console.error(`Invalid key. Must be one of: ${validKeys.join(', ')}`);
+      process.exit(1);
+    }
+
+    try {
+      const { existsSync, mkdirSync, readFileSync, writeFileSync } = await import('fs');
+      const { join } = await import('path');
+      const { homedir } = await import('os');
+
+      const configPath = join(homedir(), '.config', 'pm-ai', 'config.json');
+      const configDir = join(configPath, '..');
+
+      mkdirSync(configDir, { recursive: true });
+
+      let config: Record<string, string> = {};
+      if (existsSync(configPath)) {
+        config = JSON.parse(readFileSync(configPath, 'utf-8'));
+      }
+
+      config[key] = value;
+      writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+      console.log(`✓ Config updated: ${key} = ${value}`);
+      console.log(`  Config file: ${configPath}`);
+    } catch (error) {
+      console.error('Failed to set config:', error);
+      process.exit(1);
+    }
+  },
+
+  'config:get': async (args: string[]) => {
+    const { getConfig } = await import('../config/index.js');
+    const key = args[0];
+    const config = getConfig();
+
+    if (key) {
+      if (key === 'dbPath') {
+        console.log(config.dbPath);
+      } else {
+        console.error(`Unknown config key: ${key}`);
+        console.error('Available keys: dbPath');
+      }
+    } else {
+      console.log(JSON.stringify(config, null, 2));
+    }
+  },
+
+  'config:edit': async () => {
+    const { existsSync } = await import('fs');
+    const { join } = await import('path');
+    const { homedir } = await import('os');
+    const { execSync } = await import('child_process');
+
+    const configPath = join(homedir(), '.config', 'pm-ai', 'config.json');
+
+    // Create default config if it doesn't exist
+    if (!existsSync(configPath)) {
+      const { mkdirSync, writeFileSync } = await import('fs');
+      mkdirSync(join(configPath, '..'), { recursive: true });
+      writeFileSync(configPath, JSON.stringify({ dbPath: '' }, null, 2));
+    }
+
+    // Open in default editor
+    const editor = process.env.EDITOR || 'nano';
+    execSync(`${editor} "${configPath}"`, { stdio: 'inherit' });
+  },
+
   'help': async () => {
     console.log(`
 PM-AI CLI - Project Management AI
@@ -123,6 +199,9 @@ Commands:
   list-tasks <project-id>     List all tasks for a project
   update-status <task-id>     Update task status (planned|review|done)
   progress <project-id>       Show project progress statistics
+  config:set <key> <value>    Set configuration value
+  config:get [key]            Get configuration value(s)
+  config:edit                 Edit config file in default editor
   help                        Show this help message
 
 Examples:
@@ -130,6 +209,9 @@ Examples:
   pm-ai list-tasks abc123-def456-ghi789
   pm-ai update-status task-id-here done
   pm-ai progress abc123-def456-ghi789
+  pm-ai config:set dbPath /custom/path/db.db
+  pm-ai config:get
+  pm-ai config:get dbPath
 `);
   }
 };

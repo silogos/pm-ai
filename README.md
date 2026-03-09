@@ -38,6 +38,88 @@ npm run db:migrate
 npm run build
 ```
 
+## Configuration
+
+PM-AI supports three configuration methods for the database path, with the following priority order:
+
+### 1. Environment Variable (Highest Priority)
+
+Set the `PMAI_DB_PATH` environment variable. This is typically used in MCP client configuration.
+
+**Example (Claude Desktop config):**
+```json
+{
+  "mcpServers": {
+    "pm-ai": {
+      "command": ["npx", "-y", "pm-ai-mcp-server"],
+      "environment": {
+        "PMAI_DB_PATH": "/path/to/database.db"
+      }
+    }
+  }
+}
+```
+
+### 2. Global Config File (Fallback)
+
+Create a config file at `~/.config/pm-ai/config.json`:
+
+```json
+{
+  "dbPath": "/path/to/database.db"
+}
+```
+
+### 3. Default Path (Final Fallback)
+
+If no configuration is provided, the database will be stored at:
+```
+~/.config/pm-ai/pmai.db
+```
+
+### Development vs Production
+
+- **Development**: Uses `./drizzle/pmai.db` (local project directory)
+- **Production**: Uses `~/.config/pm-ai/pmai.db` (user config directory)
+
+**Note**: All PM-AI production data (config and database) is stored in `~/.config/pm-ai/` by default.
+
+### CLI Config Commands
+
+PM-AI includes CLI commands to manage configuration:
+
+```bash
+# Set a configuration value
+pm-ai config:set dbPath /custom/path/db.db
+
+# Get all configuration values
+pm-ai config:get
+
+# Get a specific configuration value
+pm-ai config:get dbPath
+
+# Edit config file in your default editor
+pm-ai config:edit
+```
+
+### Configuration Priority
+
+The configuration system uses the following priority order (highest to lowest):
+
+1. **Environment variable** (`PMAI_DB_PATH`) - Highest priority, typically set in MCP client config
+2. **Global config file** (`~/.config/pm-ai/config.json`) - Fallback if no environment variable
+3. **Default path** (`~/.config/pm-ai/pmai.db`) - Final fallback
+
+### Data Location
+
+All PM-AI data (configuration and database) is stored in `~/.config/pm-ai/` by default:
+- **Config file**: `~/.config/pm-ai/config.json`
+- **Database**: `~/.config/pm-ai/pmai.db`
+
+### Directory Creation
+
+The server automatically creates parent directories as needed. For example, if you specify `/custom/data/pmai.db`, the `/custom/data/` directory will be created automatically.
+
 ## Usage
 
 ### Development
