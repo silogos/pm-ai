@@ -26,9 +26,18 @@ export const tasks = sqliteTable('tasks', {
   status: text('status').$type<'planned' | 'review' | 'done'>().notNull()
 });
 
+export const taskComments = sqliteTable('task_comments', {
+  id: text('id').primaryKey(),
+  taskId: text('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull()
+});
+
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 export type Plan = typeof plans.$inferSelect;
 export type NewPlan = typeof plans.$inferInsert;
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
+export type TaskComment = typeof taskComments.$inferSelect;
+export type NewTaskComment = typeof taskComments.$inferInsert;

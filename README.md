@@ -1,13 +1,24 @@
 # PM-AI MCP Server
 
-A **Model Context Protocol (MCP)** server for storing and managing project plans and tasks. This server enables Claude to save Markdown project planning as structured data in SQLite, then retrieve it later via MCP resources.
+A comprehensive **Model Context Protocol (MCP)** server for intelligent project management. This server enables AI assistants like Claude to manage complete project lifecycles, from planning and task creation to dependency analysis and progress tracking.
 
 ## Features
 
-- **Save Plans**: Store Markdown project plans with structured tasks
-- **Manage Tasks**: Organize tasks with priorities, dependencies, and status tracking
-- **Project Organization**: Group plans and tasks by project
-- **MCP Resources**: Retrieve plans and tasks via resource URIs (`pmai://plans/{id}`, `pmai://tasks/{id}`)
+### Core Capabilities
+- **Project Planning**: Store Markdown project plans with structured tasks
+- **Task Management**: Full CRUD operations for tasks with priorities, dependencies, and status tracking
+- **Progress Tracking**: Visual progress statistics with completion percentages and priority breakdowns
+- **Search & Filter**: Advanced task search by keyword and filter by status, priority, or plan
+- **Dependency Analysis**: Build dependency graphs, detect circular dependencies, and identify critical paths
+- **Comments**: Add comments to tasks for collaboration and documentation
+- **Project Organization**: Group plans and tasks by project with proper foreign key relationships
+
+### Advanced Features
+- **Dependency Graph**: Analyze task dependencies and relationships
+- **Critical Path Analysis**: Identify the longest dependency chain to spot bottlenecks
+- **Circular Dependency Detection**: Automatically detect dependency cycles that could block progress
+- **Topological Sorting**: Get optimal task execution order based on dependencies
+- **Progress Dashboard**: Real-time project progress with status breakdowns and priority metrics
 
 ## Installation
 
@@ -72,9 +83,71 @@ Save a project plan with its markdown content and optional structured tasks.
   - `title` (string): Task title
   - `description` (string, optional): Task description
   - `priority` (string, optional): "high" | "medium" | "low"
-  - `dependencies` (array, optional): Array of task titles this depends on
+  - `dependencies` (array, optional): Array of task IDs this depends on
   - `flag` (string, optional): Any flags (e.g., "blocking", "needs-review")
   - `status` (string, optional): "planned" | "review" | "done"
+
+### `update_task`
+
+Update a single field or multiple fields of an existing task.
+
+**Parameters:**
+- `task_id` (string): The ID of the task to update
+- `status` (string, optional): New status: "planned" | "review" | "done"
+- `priority` (string, optional): New priority: "high" | "medium" | "low"
+- `title` (string, optional): New title for the task
+- `description` (string, optional): New description for the task
+- `flag` (string, optional): New flag for the task
+- `dependencies` (array, optional): New dependencies (array of task IDs)
+
+### `delete_task`
+
+Delete a task permanently from the database.
+
+**Parameters:**
+- `task_id` (string): The ID of the task to delete
+
+### `add_task_comment`
+
+Add a comment to a task.
+
+**Parameters:**
+- `task_id` (string): The ID of the task to add a comment to
+- `content` (string): The comment content to add
+
+### `search_tasks`
+
+Search for tasks by keyword in title or description.
+
+**Parameters:**
+- `project_id` (string): The ID of the project to search in
+- `query` (string): Search query to match against task titles and descriptions
+
+### `filter_tasks`
+
+Filter tasks by status, priority, plan ID, or any combination of these criteria.
+
+**Parameters:**
+- `project_id` (string): The ID of the project to filter tasks in
+- `status` (array, optional): Filter by task status (one or more): "planned" | "review" | "done"
+- `priority` (array, optional): Filter by task priority (one or more): "high" | "medium" | "low"
+- `plan_id` (string, optional): Filter by specific plan ID
+
+### `get_task_dependencies`
+
+Get dependency information for a task (upstream dependencies and/or downstream dependents).
+
+**Parameters:**
+- `task_id` (string): The ID of the task to get dependencies for
+- `type` (string, optional): Type of dependencies to retrieve: "upstream" | "downstream" | "both" (default: "both")
+
+### `get_critical_path`
+
+Get the critical path (longest dependency chain) for a project to identify bottlenecks.
+
+**Parameters:**
+- `project_id` (string): The ID of the project to analyze
+- `check_circular` (boolean, optional): Also check for circular dependencies (default: false)
 
 ## MCP Prompts
 
@@ -89,7 +162,13 @@ Convert a markdown project plan into structured tasks.
 ## MCP Resources
 
 - `pmai://plans/{project_id}` - Get all plans for a project
-- `pmai://tasks/{project_id}` - Get all tasks for a project
+- `pmai://tasks/{project_id}` - Get all tasks for a project with plan information
+- `pmai://progress/{project_id}` - Get progress statistics for a project including:
+  - Total task count
+  - Tasks by status (planned, in review, completed)
+  - Completion percentage
+  - Breakdown by priority with completion rates
+  - Status distribution percentages
 
 ## Database Schema
 
@@ -114,8 +193,14 @@ Convert a markdown project plan into structured tasks.
 - `description` (TEXT)
 - `flag` (TEXT)
 - `priority` (TEXT)
-- `dependencies` (TEXT, JSON)
-- `status` (TEXT)
+- `dependencies` (TEXT, JSON array of task IDs)
+- `status` (TEXT): "planned" | "review" | "done"
+
+**task_comments**
+- `id` (TEXT, PRIMARY KEY)
+- `task_id` (TEXT, FOREIGN KEY → tasks)
+- `content` (TEXT, NOT NULL)
+- `created_at` (TEXT)
 
 ## Example Workflow
 
@@ -132,25 +217,41 @@ Convert a markdown project plan into structured tasks.
 ```
 pm-ai/
 ├── src/
-│   ├── index.ts                    # MCP server entry point
+│   ├── index.ts                        # MCP server entry point
 │   ├── db/
-│   │   ├── client.ts               # Drizzle SQLite client
-│   │   └── schema.ts               # Database schema definitions
+│   │   ├── client.ts                   # Drizzle SQLite client
+│   │   └── schema.ts                   # Database schema definitions
 │   ├── services/
-│   │   ├── projectService.ts       # Project CRUD operations
-│   │   ├── planService.ts          # Plan CRUD operations
-│   │   └── taskService.ts          # Task CRUD operations
-│   └── mcp/
-│       ├── tools/
-│       │   └── savePlan.ts         # MCP tool: save_plan
-│       ├── prompts/
-│       │   └── breakdownMarkdownPlan.ts  # MCP prompt
-│       └── resources/
-│           ├── plans.ts            # Resource: pmai://plans/{id}
-│           └── tasks.ts            # Resource: pmai://tasks/{id}
+│   │   ├── projectService.ts           # Project CRUD operations
+│   │   ├── planService.ts              # Plan CRUD operations
+│   │   ├── taskService.ts              # Task CRUD operations
+│   │   ├── commentService.ts           # Task comment operations
+│   │   ├── progressService.ts          # Progress tracking & statistics
+│   │   ├── taskQueryService.ts         # Task search & filtering
+│   │   └── dependencyGraphService.ts   # Dependency analysis
+│   ├── utils/
+│   │   └── graph.ts                    # Graph algorithms (topological sort, DFS, etc.)
+│   ├── mcp/
+│   │   ├── tools/
+│   │   │   ├── savePlan.ts             # MCP tool: save_plan
+│   │   │   ├── updateTask.ts           # MCP tool: update_task
+│   │   │   ├── deleteTask.ts           # MCP tool: delete_task
+│   │   │   ├── addTaskComment.ts       # MCP tool: add_task_comment
+│   │   │   ├── searchTasks.ts          # MCP tool: search_tasks
+│   │   │   ├── filterTasks.ts          # MCP tool: filter_tasks
+│   │   │   ├── getTaskDependencies.ts  # MCP tool: get_task_dependencies
+│   │   │   └── getCriticalPath.ts      # MCP tool: get_critical_path
+│   │   ├── prompts/
+│   │   │   └── breakdownMarkdownPlan.ts  # MCP prompt
+│   │   └── resources/
+│   │       ├── plans.ts                # Resource: pmai://plans/{id}
+│   │       ├── tasks.ts                # Resource: pmai://tasks/{id}
+│   │       └── progress.ts             # Resource: pmai://progress/{id}
+│   └── scripts/
+│       └── createProject.ts            # Script to create a new project
 ├── drizzle/
 │   └── (migrations folder)
-├── drizzle.config.ts               # Drizzle Kit config
+├── drizzle.config.ts                   # Drizzle Kit config
 ├── package.json
 ├── tsconfig.json
 └── README.md
