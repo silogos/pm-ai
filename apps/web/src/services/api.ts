@@ -15,13 +15,12 @@ import type {
   AddCommentRequest
 } from '../types';
 
-// In development, use relative path to go through Vite proxy
-// In production, use the full API URL
-const isDev = import.meta.env.DEV;
-const API_BASE_URL = import.meta.env.VITE_API_URL || (isDev ? '' : 'http://localhost:3000');
+// Use relative path for both dev and production
+// API is served from the same server as the web app
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
-  baseURL: isDev ? '/api' : `${API_BASE_URL}/api`,
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     'Content-Type': 'application/json'
   }

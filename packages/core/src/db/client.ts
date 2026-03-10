@@ -16,7 +16,7 @@ if (__dirname.endsWith('/src') || __dirname.endsWith('\\src')) {
 }
 
 // Default database path is in the user's config directory
-const defaultDbPath = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.config', 'pm-ai', 'db.sqlite');
+const defaultDbPath = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.config', 'pm-ai', 'pmai.db');
 
 export interface DatabaseConfig {
   path?: string;  // Database file path

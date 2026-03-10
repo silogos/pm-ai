@@ -64,7 +64,7 @@ This project uses PM-AI for project management. When working on this project, fo
 - Always initialize PM-AI project before creating plans
 - Let Claude handle task IDs and dependencies
 - Update task status regularly for accurate progress
-- Database: ~/.config/pm-ai/db.sqlite
+- Database: ~/.config/pm-ai/pmai.db
 `;
 
 export async function registerInjectClaudeMdTool(server: McpServer): Promise<void> {

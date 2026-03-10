@@ -4,8 +4,7 @@ import { mkdirSync, readFileSync, existsSync } from 'fs';
 
 export interface Config {
   dbPath: string;
-  webPort?: number;
-  webAutoOpen?: boolean;
+  apiUrl?: string;
 }
 
 const GLOBAL_CONFIG_PATH = join(homedir(), '.config', 'pm-ai', 'config.json');
@@ -27,11 +26,8 @@ export function getConfig(): Config {
   // Priority 1: Environment variable (from MCP client config)
   if (process.env.PMAI_DB_PATH) {
     const config: Config = { dbPath: process.env.PMAI_DB_PATH };
-    if (process.env.PMAI_WEB_PORT) {
-      config.webPort = parseInt(process.env.PMAI_WEB_PORT, 10);
-    }
-    if (process.env.PMAI_WEB_AUTO_OPEN) {
-      config.webAutoOpen = process.env.PMAI_WEB_AUTO_OPEN === 'true';
+    if (process.env.PMAI_API_URL) {
+      config.apiUrl = process.env.PMAI_API_URL;
     }
     return config;
   }
@@ -41,13 +37,15 @@ export function getConfig(): Config {
   if (globalConfig.dbPath) {
     return {
       dbPath: globalConfig.dbPath,
-      webPort: globalConfig.webPort,
-      webAutoOpen: globalConfig.webAutoOpen
+      apiUrl: globalConfig.apiUrl
     };
   }
 
   // Priority 3: Default
-  return { dbPath: DEFAULT_DB_PATH };
+  return {
+    dbPath: DEFAULT_DB_PATH,
+    apiUrl: 'http://localhost:8080'
+  };
 }
 
 // Helper to ensure DB directory exists

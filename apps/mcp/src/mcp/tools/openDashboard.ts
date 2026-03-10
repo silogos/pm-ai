@@ -14,21 +14,21 @@ export async function registerOpenDashboardTool(server: McpServer): Promise<void
     },
     async (args) => {
       const { project_id } = args;
-      const webServerUrl = (global as any).webServerUrl;
+      const apiServerUrl = (global as any).apiServerUrl;
 
-      if (!webServerUrl) {
+      if (!apiServerUrl) {
         return {
           content: [{
             type: 'text',
-            text: 'Web dashboard is not available. The HTTP server may not have started correctly.'
+            text: 'API server URL is not available. Please ensure the API server is running.'
           }],
           isError: true
         };
       }
 
       const url = project_id
-        ? `${webServerUrl}/project/${project_id}`
-        : webServerUrl;
+        ? `${apiServerUrl}/project/${project_id}`
+        : apiServerUrl;
 
       try {
         // Open the URL in the default browser
