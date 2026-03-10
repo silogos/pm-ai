@@ -1,5 +1,6 @@
-import { Router, Request, Response } from 'express';
+import { Hono } from 'hono';
 import { z } from 'zod';
+import { zValidator } from '@hono/zod-validator';
 import {
   getAllProjects,
   getProjectById,
@@ -39,15 +40,8 @@ import {
   getTaskDependents,
   getCriticalPath
 } from '@pm-ai/core';
-import { asyncHandler, ApiError } from '../middleware/errors.js';
 
-const router: Router = Router();
-
-// Helper function to safely get string from req.params
-function getParam(params: any, key: string): string {
-  const value = params[key];
-  return Array.isArray(value) ? value[0] : value;
-}
+const app = new Hono();
 
 // Validation schemas
 const createProjectSchema = z.object({
@@ -73,258 +67,361 @@ const addCommentSchema = z.object({
   content: z.string().min(1).max(5000)
 });
 
+// Error handler helper
+function handleError(err: Error, c: any) {
+  console.error('[API Error]', err);
+  return c.json({
+    error: {
+      message: err.message || 'Internal Server Error',
+      code: 'INTERNAL_ERROR',
+      statusCode: 500
+    }
+  }, 500);
+}
+
 // ==================== Projects ====================
 
 // GET /api/projects - List all projects
-router.get('/projects', asyncHandler(async (req: Request, res: Response) => {
-  const projects = await getAllProjects();
+app.get('/projects', async (c) => {
+  try {
+    const projects = await getAllProjects();
 
-  // Get progress for each project
-  const projectsWithProgress = await Promise.all(
-    projects.map(async (project) => {
-      const progress = await getProjectProgress(project.id);
-      return {
-        ...project,
-        progress
-      };
-    })
-  );
+    // Get progress for each project
+    const projectsWithProgress = await Promise.all(
+      projects.map(async (project) => {
+        const progress = await getProjectProgress(project.id);
+        return {
+          ...project,
+          progress
+        };
+      })
+    );
 
-  res.json({ projects: projectsWithProgress });
-}));
+    return c.json({ projects: projectsWithProgress });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // POST /api/projects - Create a new project
-router.post('/projects', asyncHandler(async (req: Request, res: Response) => {
-  const { name } = createProjectSchema.parse(req.body);
-  const projectId = await createProject(name);
-  const project = await getProjectById(projectId);
+app.post('/projects', zValidator('json', createProjectSchema), async (c) => {
+  try {
+    const { name } = c.req.valid('json');
+    const projectId = await createProject(name);
+    const project = await getProjectById(projectId);
 
-  if (!project) {
-    throw new ApiError('Failed to create project', 500);
+    if (!project) {
+      return c.json({
+        error: {
+          message: 'Failed to create project',
+          code: 'CREATE_FAILED',
+          statusCode: 500
+        }
+      }, 500);
+    }
+
+    return c.json({ project }, 201);
+  } catch (err) {
+    return handleError(err as Error, c);
   }
-
-  res.status(201).json({ project });
-}));
+});
 
 // GET /api/projects/:id - Get project details
-router.get('/projects/:id', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const project = await getProjectById(id);
+app.get('/projects/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const project = await getProjectById(id);
 
-  if (!project) {
-    throw new ApiError('Project not found', 404, 'PROJECT_NOT_FOUND');
-  }
-
-  const progress = await getProjectProgress(id);
-  const plans = await getPlans(id);
-  const tasks = await getTasks(id);
-
-  res.json({
-    project: {
-      ...project,
-      progress,
-      plans,
-      tasks
+    if (!project) {
+      return c.json({
+        error: {
+          message: 'Project not found',
+          code: 'PROJECT_NOT_FOUND',
+          statusCode: 404
+        }
+      }, 404);
     }
-  });
-}));
+
+    const progress = await getProjectProgress(id);
+    const plans = await getPlans(id);
+    const tasks = await getTasks(id);
+
+    return c.json({
+      project: {
+        ...project,
+        progress,
+        plans,
+        tasks
+      }
+    });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // GET /api/projects/:id/plans - Get project plans
-router.get('/projects/:id/plans', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const plans = await getPlans(id);
+app.get('/projects/:id/plans', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const plans = await getPlans(id);
 
-  // Get progress for each plan
-  const plansWithProgress = await Promise.all(
-    plans.map(async (plan) => {
-      const progress = await getPlanProgress(plan.id);
-      return {
-        ...plan,
-        progress
-      };
-    })
-  );
+    // Get progress for each plan
+    const plansWithProgress = await Promise.all(
+      plans.map(async (plan) => {
+        const progress = await getPlanProgress(plan.id);
+        return {
+          ...plan,
+          progress
+        };
+      })
+    );
 
-  res.json({ plans: plansWithProgress });
-}));
+    return c.json({ plans: plansWithProgress });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // GET /api/projects/:id/tasks - Get project tasks
-router.get('/projects/:id/tasks', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const { status, priority } = req.query;
+app.get('/projects/:id/tasks', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const status = c.req.query('status');
+    const priority = c.req.query('priority');
 
-  let tasks;
+    let tasks;
 
-  if (status && typeof status === 'string') {
-    const statusEnum = status === 'review' ? 'review' : status === 'done' ? 'done' : 'planned';
-    tasks = await getTasksByStatus(id, statusEnum);
-  } else if (priority && typeof priority === 'string') {
-    const priorityEnum = priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low';
-    tasks = await getTasksByPriority(id, priorityEnum);
-  } else {
-    tasks = await getTasks(id);
+    if (status) {
+      const statusEnum = status === 'review' ? 'review' : status === 'done' ? 'done' : 'planned';
+      tasks = await getTasksByStatus(id, statusEnum);
+    } else if (priority) {
+      const priorityEnum = priority === 'high' ? 'high' : priority === 'medium' ? 'medium' : 'low';
+      tasks = await getTasksByPriority(id, priorityEnum);
+    } else {
+      tasks = await getTasks(id);
+    }
+
+    return c.json({ tasks });
+  } catch (err) {
+    return handleError(err as Error, c);
   }
-
-  res.json({ tasks });
-}));
+});
 
 // GET /api/projects/:id/progress - Get project progress
-router.get('/projects/:id/progress', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const progress = await getProjectProgress(id);
-  res.json({ progress });
-}));
+app.get('/projects/:id/progress', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const progress = await getProjectProgress(id);
+    return c.json({ progress });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // GET /api/projects/:id/critical-path - Get critical path
-router.get('/projects/:id/critical-path', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const criticalPath = await getCriticalPath(id);
-  res.json({ critical_path: criticalPath });
-}));
+app.get('/projects/:id/critical-path', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const criticalPath = await getCriticalPath(id);
+    return c.json({ critical_path: criticalPath });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // ==================== Plans ====================
 
 // POST /api/plans - Create a new plan
-router.post('/plans', asyncHandler(async (req: Request, res: Response) => {
-  const { projectId, title, markdown } = createPlanSchema.parse(req.body);
-  const planId = await savePlan(projectId, title, markdown);
-  const plan = await getPlanById(planId);
+app.post('/plans', zValidator('json', createPlanSchema), async (c) => {
+  try {
+    const { projectId, title, markdown } = c.req.valid('json');
+    const planId = await savePlan(projectId, title, markdown);
+    const plan = await getPlanById(planId);
 
-  if (!plan) {
-    throw new ApiError('Failed to create plan', 500);
+    if (!plan) {
+      return c.json({
+        error: {
+          message: 'Failed to create plan',
+          code: 'CREATE_FAILED',
+          statusCode: 500
+        }
+      }, 500);
+    }
+
+    return c.json({ plan }, 201);
+  } catch (err) {
+    return handleError(err as Error, c);
   }
-
-  res.status(201).json({ plan });
-}));
+});
 
 // GET /api/plans/:id - Get plan details
-router.get('/plans/:id', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const plan = await getPlanById(id);
+app.get('/plans/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const plan = await getPlanById(id);
 
-  if (!plan) {
-    throw new ApiError('Plan not found', 404, 'PLAN_NOT_FOUND');
-  }
-
-  const progress = await getPlanProgress(id);
-  const tasks = await getTasksByPlanId(id);
-
-  res.json({
-    plan: {
-      ...plan,
-      progress,
-      tasks: tasks.map(task => ({
-        ...task,
-        dependencies: parseDependencies(task.dependencies)
-      }))
+    if (!plan) {
+      return c.json({
+        error: {
+          message: 'Plan not found',
+          code: 'PLAN_NOT_FOUND',
+          statusCode: 404
+        }
+      }, 404);
     }
-  });
-}));
+
+    const progress = await getPlanProgress(id);
+    const tasks = await getTasksByPlanId(id);
+
+    return c.json({
+      plan: {
+        ...plan,
+        progress,
+        tasks: tasks.map(task => ({
+          ...task,
+          dependencies: parseDependencies(task.dependencies)
+        }))
+      }
+    });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // ==================== Tasks ====================
 
 // PATCH /api/tasks/:id - Update a task
-router.patch('/tasks/:id', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const updates = updateTaskSchema.parse(req.body);
+app.patch('/tasks/:id', zValidator('json', updateTaskSchema), async (c) => {
+  try {
+    const id = c.req.param('id');
+    const updates = c.req.valid('json');
 
-  let task = await getTaskById(id);
+    let task = await getTaskById(id);
 
-  if (!task) {
-    throw new ApiError('Task not found', 404, 'TASK_NOT_FOUND');
-  }
-
-  // Apply updates
-  if (updates.title !== undefined) {
-    task = await updateTaskTitle(id, updates.title);
-  }
-  if (updates.description !== undefined) {
-    task = await updateTaskDescription(id, updates.description);
-  }
-  if (updates.flag !== undefined) {
-    task = await updateTaskFlag(id, updates.flag);
-  }
-  if (updates.priority !== undefined) {
-    if (updates.priority === null) {
-      task = await updateTaskFlag(id, null); // Clear priority by setting to null
-    } else {
-      task = await updateTaskPriority(id, updates.priority);
+    if (!task) {
+      return c.json({
+        error: {
+          message: 'Task not found',
+          code: 'TASK_NOT_FOUND',
+          statusCode: 404
+        }
+      }, 404);
     }
-  }
-  if (updates.status !== undefined) {
-    task = await updateTaskStatus(id, updates.status);
-  }
-  if (updates.dependencies !== undefined) {
-    task = await updateTaskDependencies(id, updates.dependencies);
-  }
 
-  res.json({
-    task: task ? {
-      ...task,
-      dependencies: parseDependencies(task.dependencies)
-    } : null
-  });
-}));
+    // Apply updates
+    if (updates.title !== undefined) {
+      task = await updateTaskTitle(id, updates.title);
+    }
+    if (updates.description !== undefined) {
+      task = await updateTaskDescription(id, updates.description);
+    }
+    if (updates.flag !== undefined) {
+      task = await updateTaskFlag(id, updates.flag);
+    }
+    if (updates.priority !== undefined) {
+      if (updates.priority === null) {
+        task = await updateTaskFlag(id, null);
+      } else {
+        task = await updateTaskPriority(id, updates.priority);
+      }
+    }
+    if (updates.status !== undefined) {
+      task = await updateTaskStatus(id, updates.status);
+    }
+    if (updates.dependencies !== undefined) {
+      task = await updateTaskDependencies(id, updates.dependencies);
+    }
+
+    return c.json({
+      task: task ? {
+        ...task,
+        dependencies: parseDependencies(task.dependencies)
+      } : null
+    });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // DELETE /api/tasks/:id - Delete a task
-router.delete('/tasks/:id', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  await deleteTask(id);
-  res.status(204).send();
-}));
+app.delete('/tasks/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+    await deleteTask(id);
+    return c.body(null, 204);
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // GET /api/tasks/:id/dependencies - Get task dependencies
-router.get('/tasks/:id/dependencies', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const { type } = req.query;
+app.get('/tasks/:id/dependencies', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const type = c.req.query('type');
 
-  const dependencyType = type === 'upstream' ? 'upstream' : type === 'downstream' ? 'downstream' : 'both';
+    const dependencyType = type === 'upstream' ? 'upstream' : type === 'downstream' ? 'downstream' : 'both';
 
-  let dependencies: any = {};
+    let dependencies: any = {};
 
-  if (dependencyType === 'upstream' || dependencyType === 'both') {
-    const upstreamDeps = await getTaskDependencies(id);
-    dependencies.upstream = upstreamDeps;
+    if (dependencyType === 'upstream' || dependencyType === 'both') {
+      const upstreamDeps = await getTaskDependencies(id);
+      dependencies.upstream = upstreamDeps;
+    }
+
+    if (dependencyType === 'downstream' || dependencyType === 'both') {
+      const downstreamDeps = await getTaskDependents(id);
+      dependencies.downstream = downstreamDeps;
+    }
+
+    // If only one type was requested, return just that
+    if (dependencyType === 'upstream') {
+      dependencies = dependencies.upstream;
+    } else if (dependencyType === 'downstream') {
+      dependencies = dependencies.downstream;
+    }
+
+    return c.json({ dependencies });
+  } catch (err) {
+    return handleError(err as Error, c);
   }
-
-  if (dependencyType === 'downstream' || dependencyType === 'both') {
-    const downstreamDeps = await getTaskDependents(id);
-    dependencies.downstream = downstreamDeps;
-  }
-
-  // If only one type was requested, return just that
-  if (dependencyType === 'upstream') {
-    dependencies = dependencies.upstream;
-  } else if (dependencyType === 'downstream') {
-    dependencies = dependencies.downstream;
-  }
-
-  res.json({ dependencies });
-}));
+});
 
 // POST /api/tasks/:id/comments - Add a comment to a task
-router.post('/tasks/:id/comments', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const { content } = addCommentSchema.parse(req.body);
+app.post('/tasks/:id/comments', zValidator('json', addCommentSchema), async (c) => {
+  try {
+    const id = c.req.param('id');
+    const { content } = c.req.valid('json');
 
-  const commentId = await addComment(id, content);
-  const comments = await getComments(id);
+    const commentId = await addComment(id, content);
+    const comments = await getComments(id);
 
-  res.status(201).json({ comments });
-}));
+    return c.json({ comments }, 201);
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // GET /api/tasks/:id/comments - Get task comments
-router.get('/tasks/:id/comments', asyncHandler(async (req: Request, res: Response) => {
-  const id = getParam(req.params, 'id');
-  const comments = await getComments(id);
-  res.json({ comments });
-}));
+app.get('/tasks/:id/comments', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const comments = await getComments(id);
+    return c.json({ comments });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
 // DELETE /api/tasks/:taskId/comments/:commentId - Delete a comment
-router.delete('/tasks/:taskId/comments/:commentId', asyncHandler(async (req: Request, res: Response) => {
-  const commentId = getParam(req.params, 'commentId');
-  await deleteComment(commentId);
-  res.status(204).send();
-}));
+app.delete('/tasks/:taskId/comments/:commentId', async (c) => {
+  try {
+    const commentId = c.req.param('commentId');
+    await deleteComment(commentId);
+    return c.body(null, 204);
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
 
-export const apiRoutes = router;
+export const apiRoutes = app;

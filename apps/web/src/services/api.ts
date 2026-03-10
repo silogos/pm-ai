@@ -15,11 +15,13 @@ import type {
   AddCommentRequest
 } from '../types';
 
-// Get API base URL from environment or default to localhost:3456
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3456';
+// In development, use relative path to go through Vite proxy
+// In production, use the full API URL
+const isDev = import.meta.env.DEV;
+const API_BASE_URL = import.meta.env.VITE_API_URL || (isDev ? '' : 'http://localhost:3000');
 
 const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`,
+  baseURL: isDev ? '/api' : `${API_BASE_URL}/api`,
   headers: {
     'Content-Type': 'application/json'
   }

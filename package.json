@@ -24,8 +24,5 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "pnpm@10.25.0",
-  "dependencies": {
-    "better-sqlite3": "^11.10.0"
-  }
+  "packageManager": "pnpm@10.25.0"
 }

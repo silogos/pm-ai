@@ -10,6 +10,11 @@
       "cache": false,
       "persistent": true
     },
+    "web#dev": {
+      "with": ["api#dev"],
+      "cache": false,
+      "persistent": true
+    },
     "lint": {
       "outputs": []
     },
