@@ -358,23 +358,22 @@ Initialize a new project in PM-AI. Use this when starting work on a new project,
 - If a project with the same name already exists, returns the existing project ID
 
 ### `inject_claude_md`
-Inject PM-AI system guide into the project's CLAUDE.md file. This helps AI assistants understand how to work with PM-AI for project management.
+Inject PM-AI workflow guide into CLAUDE.md. MCP server checks for this on startup.
 
 **Parameters:**
-- `project_path` (string, optional): Path where CLAUDE.md will be created/updated. Defaults to current working directory.
-- `overwrite` (boolean, optional): If true, replaces existing PM-AI section. If false (default), skips if PM-AI section exists.
+- `project_path` (string, optional): Path to CLAUDE.md. Defaults to current directory.
+- `overwrite` (boolean, optional): Replace existing PM-AI section.
 
-**What it adds to CLAUDE.md:**
-- Quick start guide for PM-AI
-- Available tools reference
-- Typical workflow examples
-- Best practices and tips
-- Data location information
+**What it adds:**
+- Core workflow (initialize → save plans → work → track)
+- Key tools reference (quick lookup)
+- Quick examples for common tasks
+- Important notes
+
+**Note:** Content is concise - focused on agent workflow, not comprehensive docs.
 
 **When to use:**
 - First time setting up PM-AI in a project
-- When you want AI assistants to understand PM-AI workflow
-- After updating PM-AI to get latest documentation in CLAUDE.md
 
 ### `save_plan`
 Save a project plan with markdown content and optional structured tasks.
@@ -456,11 +455,13 @@ Convert a markdown project plan into structured tasks.
 
 ## Workflows
 
-### Workflow 0: First-Time Setup (Inject PM-AI Guide)
+### Workflow 0: First-Time Setup (Inject PM-AI Workflow)
 
-Use this workflow when setting up PM-AI in a new or existing project. This ensures AI assistants understand how to work with PM-AI.
+**IMPORTANT:** PM-AI MCP server checks for CLAUDE.md with PM-AI workflow before starting. If not found, it will show a warning but still start.
 
-**Step 1: Inject PM-AI guide to CLAUDE.md**
+Use this workflow when setting up PM-AI in a new or existing project.
+
+**Step 1: Inject PM-AI workflow to CLAUDE.md**
 ```
 User: "Setup PM-AI for this project"
 
@@ -473,17 +474,15 @@ Claude uses: inject_claude_md tool
 Returns: {
   "success": true,
   "file": "/path/to/project/CLAUDE.md",
-  "message": "PM-AI system guide added to CLAUDE.md"
+  "message": "PM-AI workflow added to CLAUDE.md"
 }
 ```
 
 **What gets added to CLAUDE.md:**
-- PM-AI integration guide
-- Quick start instructions
-- Available tools reference
-- Typical workflows
-- Best practices
-- Troubleshooting tips
+- Core workflow (initialize → save plans → work → track)
+- Key tools reference (quick lookup)
+- Quick examples for common tasks
+- Important notes about working with PM-AI
 
 **Step 2: Verify the setup**
 ```
@@ -497,15 +496,14 @@ I can help you manage projects using PM-AI. Here's what I understand:
 ```
 
 **Benefits:**
-- ✅ All AI assistants working on the project understand PM-AI
-- ✅ Consistent workflow across different Claude sessions
-- ✅ Reduces explanation overhead
-- ✅ Team members get same PM-AI context
+- ✅ AI agents understand PM-AI workflow without explanation
+- ✅ Server validates CLAUDE.md on startup (warns if missing)
+- ✅ Concise workflow - focused on agent interaction
+- ✅ Consistent across all AI sessions
 
 **When to re-run:**
-- After PM-AI updates to get latest documentation
-- If CLAUDE.md was accidentally deleted
-- To refresh the PM-AI section (use `overwrite: true`)
+- First time setting up PM-AI in a project
+- To refresh the workflow (use `overwrite: true`)
 
 ### Workflow 1: Starting a New Project
 

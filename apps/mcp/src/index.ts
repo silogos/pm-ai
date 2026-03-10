@@ -24,6 +24,25 @@ async function main() {
 
   const config = getConfig();
 
+  // Check if CLAUDE.md exists and has PM-AI section
+  const claudeMdPath = process.cwd() + '/CLAUDE.md';
+  const claudeMdExists = require('fs').existsSync(claudeMdPath);
+
+  if (claudeMdExists) {
+    const claudeMdContent = require('fs').readFileSync(claudeMdPath, 'utf-8');
+    if (!claudeMdContent.includes('PM-AI')) {
+      console.error('⚠️  Warning: CLAUDE.md exists but PM-AI section not found.');
+      console.error('⚠️  Please run inject_claude_md tool first to add PM-AI workflow.');
+      console.error('⚠️  Starting server anyway, but AI may not understand PM-AI workflow.');
+    } else {
+      console.error('✅ CLAUDE.md found with PM-AI section');
+    }
+  } else {
+    console.error('⚠️  Warning: CLAUDE.md not found in current directory.');
+    console.error('⚠️  Please create CLAUDE.md and run inject_claude_md tool first.');
+    console.error('⚠️  Starting server anyway, but AI may not understand PM-AI workflow.');
+  }
+
   // Initialize database
   init({ path: config.dbPath });
   const server = new McpServer({
