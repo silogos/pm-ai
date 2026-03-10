@@ -10,6 +10,7 @@ import { registerSearchTasksTool } from './mcp/tools/searchTasks.js';
 import { registerFilterTasksTool } from './mcp/tools/filterTasks.js';
 import { registerGetTaskDependenciesTool } from './mcp/tools/getTaskDependencies.js';
 import { registerGetCriticalPathTool } from './mcp/tools/getCriticalPath.js';
+import { registerInjectClaudeMdTool } from './mcp/tools/injectClaudeMd.js';
 import { registerBreakdownPrompt } from './mcp/prompts/breakdownMarkdownPlan.js';
 import { registerPlansResource } from './mcp/resources/plans.js';
 import { registerTasksResource } from './mcp/resources/tasks.js';
@@ -56,6 +57,9 @@ async function main() {
   // Register MCP tools
   await registerInitProjectTool(server);
   console.error('Tool registered: init_project');
+
+  await registerInjectClaudeMdTool(server);
+  console.error('Tool registered: inject_claude_md');
 
   await registerSavePlanTool(server);
   console.error('Tool registered: save_plan');

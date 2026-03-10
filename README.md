@@ -357,6 +357,25 @@ Initialize a new project in PM-AI. Use this when starting work on a new project,
 - `project_id`: The ID of the created project (use this for subsequent operations)
 - If a project with the same name already exists, returns the existing project ID
 
+### `inject_claude_md`
+Inject PM-AI system guide into the project's CLAUDE.md file. This helps AI assistants understand how to work with PM-AI for project management.
+
+**Parameters:**
+- `project_path` (string, optional): Path where CLAUDE.md will be created/updated. Defaults to current working directory.
+- `overwrite` (boolean, optional): If true, replaces existing PM-AI section. If false (default), skips if PM-AI section exists.
+
+**What it adds to CLAUDE.md:**
+- Quick start guide for PM-AI
+- Available tools reference
+- Typical workflow examples
+- Best practices and tips
+- Data location information
+
+**When to use:**
+- First time setting up PM-AI in a project
+- When you want AI assistants to understand PM-AI workflow
+- After updating PM-AI to get latest documentation in CLAUDE.md
+
 ### `save_plan`
 Save a project plan with markdown content and optional structured tasks.
 
@@ -436,6 +455,57 @@ Convert a markdown project plan into structured tasks.
 - `project_id` (string): The project ID
 
 ## Workflows
+
+### Workflow 0: First-Time Setup (Inject PM-AI Guide)
+
+Use this workflow when setting up PM-AI in a new or existing project. This ensures AI assistants understand how to work with PM-AI.
+
+**Step 1: Inject PM-AI guide to CLAUDE.md**
+```
+User: "Setup PM-AI for this project"
+
+Claude uses: inject_claude_md tool
+{
+  // Optional: specify custom path
+  "project_path": "/path/to/project"
+}
+
+Returns: {
+  "success": true,
+  "file": "/path/to/project/CLAUDE.md",
+  "message": "PM-AI system guide added to CLAUDE.md"
+}
+```
+
+**What gets added to CLAUDE.md:**
+- PM-AI integration guide
+- Quick start instructions
+- Available tools reference
+- Typical workflows
+- Best practices
+- Troubleshooting tips
+
+**Step 2: Verify the setup**
+```
+User: "What do you know about PM-AI?"
+
+Claude: [Reads from CLAUDE.md and explains]
+I can help you manage projects using PM-AI. Here's what I understand:
+- PM-AI is a project management system with task tracking
+- I can initialize projects, save plans, and track progress
+- Available tools include: init_project, save_plan, update_task...
+```
+
+**Benefits:**
+- ✅ All AI assistants working on the project understand PM-AI
+- ✅ Consistent workflow across different Claude sessions
+- ✅ Reduces explanation overhead
+- ✅ Team members get same PM-AI context
+
+**When to re-run:**
+- After PM-AI updates to get latest documentation
+- If CLAUDE.md was accidentally deleted
+- To refresh the PM-AI section (use `overwrite: true`)
 
 ### Workflow 1: Starting a New Project
 
