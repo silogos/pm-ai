@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { init } from '@pm-ai/core';
+import { registerInitProjectTool } from './mcp/tools/initProject.js';
 import { registerSavePlanTool } from './mcp/tools/savePlan.js';
 import { registerUpdateTaskTool } from './mcp/tools/updateTask.js';
 import { registerDeleteTaskTool } from './mcp/tools/deleteTask.js';
@@ -53,6 +54,9 @@ async function main() {
   }
 
   // Register MCP tools
+  await registerInitProjectTool(server);
+  console.error('Tool registered: init_project');
+
   await registerSavePlanTool(server);
   console.error('Tool registered: save_plan');
 

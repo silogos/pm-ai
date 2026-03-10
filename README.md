@@ -142,6 +142,17 @@ pnpm clean            # Remove build artifacts
 
 ## MCP Tools
 
+### `init_project`
+Initialize a new project in PM-AI. Use this when starting work on a new project, folder, or package.
+
+**Parameters:**
+- `name` (string): The name of the project (can be a folder name, package name, or any project identifier)
+- `description` (string, optional): Optional description or context for the project
+
+**Returns:**
+- `project_id`: The ID of the created project (use this for subsequent operations)
+- If a project with the same name already exists, returns the existing project ID
+
 ### `save_plan`
 Save a project plan with markdown content and optional structured tasks.
 
