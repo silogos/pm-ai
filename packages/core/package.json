@@ -14,12 +14,12 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@libsql/client": "^0.10.0",
     "@pm-ai/utils": "workspace:*",
-    "better-sqlite3": "^11.8.1",
     "drizzle-orm": "^0.38.4"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.2",
     "drizzle-kit": "^0.30.4",
     "typescript": "^5.8.3"
   }

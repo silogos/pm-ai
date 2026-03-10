@@ -1,14 +1,9 @@
-import express from 'express';
-import cors from 'cors';
-import getPort from 'get-port';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { init } from '@pm-ai/core';
-import { apiRoutes } from './routes/index.js';
-import { errorHandler } from './middleware/errors.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { serve } from '@hono/node-server'
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { logger } from 'hono/logger'
+import { init } from '@pm-ai/core'
+import { apiRoutes } from './routes/index.js'
 
 export interface WebServerConfig {
   fixedPort?: number;
@@ -17,62 +12,54 @@ export interface WebServerConfig {
 }
 
 export interface WebServerInfo {
-  app: express.Application;
+  app: Hono;
   port: number;
   url: string;
   close: () => Promise<void>;
 }
 
 export async function createWebServer(config: WebServerConfig = {}): Promise<WebServerInfo> {
-  // Initialize database
-  if (config.dbPath) {
-    init({ path: config.dbPath });
-  }
+  // Initialize database with default path (~/.config/pm-ai/db.sqlite)
+  await init({});
 
-  const app = express();
+  const app = new Hono();
 
   // Middleware
-  app.use(cors());
-  app.use(express.json());
+  app.use('*', cors());
+  app.use('*', logger());
 
   // Health check endpoint
-  app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  app.get('/health', (c) => {
+    return c.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
   // API routes
-  app.use('/api', apiRoutes);
+  app.route('/api', apiRoutes);
 
-  // Serve static files from web/dist
-  const distPath = path.join(__dirname, '../../web/dist');
-  app.use(express.static(distPath));
+  // Determine port - use PORT env var or fixedPort config or default to 3000
+  const port = config.fixedPort || parseInt(process.env.PORT || '3000', 10);
 
-  // SPA fallback - serve index.html for all non-API routes
-  app.use((req, res, next) => {
-    // Skip API routes and health check
-    if (req.path.startsWith('/api') || req.path === '/health') {
-      return next();
-    }
-    res.sendFile(path.join(distPath, 'index.html'));
+  // Start server - use localhost to avoid permission issues
+  const server = serve({
+    fetch: app.fetch,
+    port
   });
 
-  // Error handling middleware (must be last)
-  app.use(errorHandler);
-
-  // Determine port
-  const port = config.fixedPort || await getPort({ port: 3456 });
-
-  // Start server
-  const server = app.listen(port, 'localhost', () => {
-    // Server started callback
-  });
+  console.log(`API server running on http://127.0.0.1:${port}`);
 
   return {
     app,
     port,
     url: `http://localhost:${port}`,
-    close: () => new Promise((resolve) => {
-      server.close(() => resolve());
-    })
+    close: async () => {
+      // @ts-ignore - server has close method
+      await server.close();
+    }
   };
 }
+
+// Auto-start server if this file is run directly
+createWebServer({}).catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});

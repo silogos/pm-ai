@@ -5,6 +5,6 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'sqlite',
   dbCredentials: {
-    url: './drizzle/pmai.db'
+    url: 'file:' + (process.env.HOME || process.env.USERPROFILE || '.') + '/.config/pm-ai/db.sqlite'
   }
 });

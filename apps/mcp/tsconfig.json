@@ -6,9 +6,7 @@
   },
   "include": ["src/**/*"],
   "references": [
-    { "path": "../../packages/types" },
-    { "path": "../../packages/utils" },
-    { "path": "../../packages/db" },
-    { "path": "../../packages/domain" }
+    { "path": "../../packages/core" },
+    { "path": "../../packages/utils" }
   ]
 }
