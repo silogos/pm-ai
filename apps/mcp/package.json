@@ -1,0 +1,33 @@
+{
+  "name": "@pm-ai/mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "pm-ai": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "cli": "tsx src/cli/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "create-project": "tsx src/scripts/createProject.ts"
+  },
+  "dependencies": {
+    "@pm-ai/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "express": "^5.2.1",
+    "cors": "^2.8.6",
+    "get-port": "^7.1.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/cors": "^2.8.19",
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3"
+  }
+}

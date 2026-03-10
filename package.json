@@ -1,60 +1,31 @@
 {
-  "name": "pm-ai-mcp-server",
+  "name": "pm-ai-monorepo",
   "version": "1.0.0",
-  "description": "A comprehensive Model Context Protocol (MCP) server for intelligent project management with task operations, progress tracking, search & filtering, and dependency analysis",
+  "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "pm-ai": "./dist/cli/index.js"
-  },
   "scripts": {
-    "dev": "PMAI_DB_PATH=./drizzle/pmai.db tsx src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "cli": "tsx src/cli/index.ts",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "create-project": "tsx src/scripts/createProject.ts",
-    "test": "echo \"Tests not yet implemented\" && exit 0",
-    "lint": "echo \"Linting not yet configured\" && exit 0"
-  },
-  "keywords": [
-    "mcp",
-    "model-context-protocol",
-    "project-management",
-    "ai",
-    "claude",
-    "anthropic",
-    "task-management",
-    "dependency-tracking",
-    "progress-tracking",
-    "sqlite",
-    "drizzle-orm"
-  ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/silogos/pm-ai.git"
-  },
-  "bugs": {
-    "url": "https://github.com/silogos/pm-ai/issues"
-  },
-  "homepage": "https://github.com/silogos/pm-ai#readme",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
-    "drizzle-orm": "^0.38.4",
-    "better-sqlite3": "^11.8.1",
-    "zod": "^3.24.1"
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@pm-ai/web",
+    "dev:api": "turbo run dev --filter=@pm-ai/api",
+    "dev:mcp": "turbo run dev --filter=@pm-ai/mcp",
+    "build": "turbo run build",
+    "build:web": "turbo run build --filter=@pm-ai/web",
+    "build:api": "turbo run build --filter=@pm-ai/api",
+    "build:mcp": "turbo run build --filter=@pm-ai/mcp",
+    "lint": "turbo run lint",
+    "db:generate": "turbo run db:generate --filter=@pm-ai/db",
+    "db:migrate": "turbo run db:migrate --filter=@pm-ai/db",
+    "clean": "rm -rf apps/*/dist packages/*/dist node_modules/.cache"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
-    "@types/node": "^22.13.10",
-    "drizzle-kit": "^0.30.4",
-    "tsx": "^4.19.2",
+    "turbo": "^2.8.15",
     "typescript": "^5.8.3"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@10.25.0",
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
   }
 }

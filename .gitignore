@@ -1,6 +1,51 @@
+# Dependencies
 node_modules
+.pnpm-store
+
+# Build outputs
 dist
-drizzle/*.db
-drizzle/*.db-journal
-.DS_Store
+build
+.next
+out
+.turbo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+
+# Logs
 *.log
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+.cache
+temp
+.tmp

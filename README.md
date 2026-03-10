@@ -13,6 +13,14 @@ A comprehensive **Model Context Protocol (MCP)** server for intelligent project 
 - **Comments**: Add comments to tasks for collaboration and documentation
 - **Project Organization**: Group plans and tasks by project with proper foreign key relationships
 
+### Web Dashboard
+- **Visual Project Management**: Beautiful web interface for managing projects through a browser
+- **Task Board (Kanban)**: Drag-and-drop task board with Planned, In Review, and Done columns
+- **Plan Editor**: Markdown editor with live preview for creating and editing project plans
+- **Dependency Graph**: Interactive visual graph showing task dependencies with critical path highlighting
+- **Task Comments**: Add and view comments directly on tasks through the web interface
+- **Real-time Updates**: All changes via web dashboard are reflected in the MCP server data
+
 ### Advanced Features
 - **Dependency Graph**: Analyze task dependencies and relationships
 - **Critical Path Analysis**: Identify the longest dependency chain to spot bottlenecks
@@ -120,6 +128,84 @@ All PM-AI data (configuration and database) is stored in `~/.config/pm-ai/` by d
 
 The server automatically creates parent directories as needed. For example, if you specify `/custom/data/pmai.db`, the `/custom/data/` directory will be created automatically.
 
+### Web Dashboard Configuration
+
+The web dashboard can be configured with additional environment variables or global config options:
+
+**Environment Variables:**
+- `PMAI_WEB_PORT` - Port for the web server (default: 3456, or random available port)
+- `PMAI_WEB_AUTO_OPEN` - Auto-open browser on start (default: false)
+
+**Global Config File:**
+```json
+{
+  "dbPath": "/path/to/database.db",
+  "webPort": 3456,
+  "webAutoOpen": true
+}
+```
+
+## Web Dashboard
+
+The PM-AI server includes a built-in web dashboard for visual project management.
+
+### Starting the Web Dashboard
+
+The web dashboard starts automatically when you run the PM-AI server:
+
+```bash
+npm run dev
+```
+
+The server will log the web dashboard URL:
+```
+Web dashboard running at http://localhost:3456
+```
+
+### Development Workflow
+
+For development with hot-reload:
+
+1. **Terminal 1**: Start the Vite dev server
+```bash
+npm run dev:web
+```
+
+2. **Terminal 2**: Start the PM-AI server (with HTTP server)
+```bash
+npm run dev
+```
+
+3. Open your browser to `http://localhost:5173` (Vite dev server)
+
+### Production Deployment
+
+For production:
+
+1. Build the frontend:
+```bash
+npm run build:web
+```
+
+2. Build the backend:
+```bash
+npm run build
+```
+
+3. Start the server:
+```bash
+PMAI_WEB_PORT=3456 npm start
+```
+
+### Web Dashboard Features
+
+- **Project List**: View all projects with progress overview
+- **Task Board**: Kanban-style board with drag-and-drop task management
+- **Plan Editor**: Create and edit project plans with markdown preview
+- **Dependency Graph**: Visual representation of task dependencies with critical path highlighting
+- **Task Comments**: Collaborate on tasks through comments
+- **Real-time Sync**: Changes via web or MCP are immediately reflected
+
 ## Usage
 
 ### Development
@@ -152,6 +238,13 @@ Add to your `.claude/mcp.json`:
 ```
 
 ## MCP Tools
+
+### `open_dashboard`
+
+Open the PM-AI web dashboard in your default browser. Provides a visual interface for managing projects, viewing task boards, and analyzing dependencies.
+
+**Parameters:**
+- `project_id` (string, optional): Open a specific project directly in the dashboard
 
 ### `save_plan`
 
@@ -300,9 +393,17 @@ Convert a markdown project plan into structured tasks.
 pm-ai/
 ├── src/
 │   ├── index.ts                        # MCP server entry point
+│   ├── config/
+│   │   └── index.ts                    # Configuration management
 │   ├── db/
 │   │   ├── client.ts                   # Drizzle SQLite client
 │   │   └── schema.ts                   # Database schema definitions
+│   ├── server/
+│   │   ├── index.ts                    # Express HTTP server
+│   │   ├── routes/
+│   │   │   └── index.ts                # RESTful API routes
+│   │   └── middleware/
+│   │       └── errors.ts               # Error handling middleware
 │   ├── services/
 │   │   ├── projectService.ts           # Project CRUD operations
 │   │   ├── planService.ts              # Plan CRUD operations
@@ -322,7 +423,8 @@ pm-ai/
 │   │   │   ├── searchTasks.ts          # MCP tool: search_tasks
 │   │   │   ├── filterTasks.ts          # MCP tool: filter_tasks
 │   │   │   ├── getTaskDependencies.ts  # MCP tool: get_task_dependencies
-│   │   │   └── getCriticalPath.ts      # MCP tool: get_critical_path
+│   │   │   ├── getCriticalPath.ts      # MCP tool: get_critical_path
+│   │   │   └── openDashboard.ts        # MCP tool: open_dashboard
 │   │   ├── prompts/
 │   │   │   └── breakdownMarkdownPlan.ts  # MCP prompt
 │   │   └── resources/
@@ -331,6 +433,23 @@ pm-ai/
 │   │       └── progress.ts             # Resource: pmai://progress/{id}
 │   └── scripts/
 │       └── createProject.ts            # Script to create a new project
+├── web/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ProjectList.tsx         # Project list component
+│   │   │   ├── ProjectDashboard.tsx    # Project dashboard component
+│   │   │   ├── TaskBoard.tsx           # Kanban task board
+│   │   │   ├── PlanEditor.tsx          # Markdown plan editor
+│   │   │   └── DependencyGraph.tsx     # Visual dependency graph
+│   │   ├── services/
+│   │   │   └── api.ts                  # API client
+│   │   ├── types/
+│   │   │   └── index.ts                # TypeScript types
+│   │   └── styles/
+│   │       └── App.css                 # Application styles
+│   ├── index.html
+│   ├── vite.config.ts                  # Vite configuration
+│   └── package.json
 ├── drizzle/
 │   └── (migrations folder)
 ├── drizzle.config.ts                   # Drizzle Kit config
