@@ -45,6 +45,210 @@ pnpm install
 pnpm build
 ```
 
+## Setup with Claude
+
+PM-AI works as an MCP (Model Context Protocol) server that connects to Claude Desktop, Claude for VS Code, or other MCP-compatible clients.
+
+### Claude Desktop Setup
+
+1. **Open Claude Desktop Settings**
+   - Click the **Settings** icon (gear) in the left sidebar
+   - Or use keyboard shortcut: `Cmd + ,` (Mac) or `Ctrl + ,` (Windows/Linux)
+
+2. **Navigate to MCP Server Configuration**
+   - Click on **Developer** in the left sidebar
+   - Find the **MCP Servers** section
+
+3. **Add PM-AI MCP Server**
+   - Click **"Add MCP Server"** or **"+"** button
+   - Enter a name: `pm-ai`
+   - Choose connection type: **Command**
+
+4. **Configure the Command**
+   ```
+   Command: node
+   Arguments: /path/to/pm-ai/apps/mcp/dist/index.js
+   ```
+
+   **Full path example:**
+   ```json
+   {
+     "command": "node",
+     "args": ["/Users/yourname/Documents/Projects/pm-ai/apps/mcp/dist/index.js"]
+   }
+   ```
+
+5. **Save and Restart**
+   - Click **Save**
+   - Restart Claude Desktop
+
+6. **Verify Connection**
+   - Start a new chat in Claude Desktop
+   - Type: "What MCP tools do you have available?"
+   - Claude should list PM-AI tools like `init_project`, `save_plan`, `update_task`, etc.
+
+### Claude for VS Code Setup
+
+1. **Open VS Code Settings**
+   - Press `Cmd + ,` (Mac) or `Ctrl + ,` (Windows/Linux)
+   - Search for "MCP"
+
+2. **Find Claude MCP Configuration**
+   - Look for **Claude MCP** section in settings
+   - Or open settings.json directly
+
+3. **Add PM-AI Configuration**
+   ```json
+   {
+     "claude.mcpServers": {
+       "pm-ai": {
+         "command": "node",
+         "args": ["/Users/yourname/Documents/Projects/pm-ai/apps/mcp/dist/index.js"],
+         "env": {
+           "NODE_ENV": "production"
+         }
+       }
+     }
+   }
+   ```
+
+4. **Reload VS Code**
+   - Press `Cmd + Shift + P` (Mac) or `Ctrl + Shift + P` (Windows/Linux)
+   - Type "Reload Window" and press Enter
+
+### MCP Configuration File (Alternative Method)
+
+You can also configure PM-AI by creating/editing the MCP configuration file directly:
+
+**Location:**
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+**Configuration:**
+```json
+{
+  "mcpServers": {
+    "pm-ai": {
+      "command": "node",
+      "args": [
+        "/Users/yourname/Documents/Projects/pm-ai/apps/mcp/dist/index.js"
+      ],
+      "env": {
+        "PMAI_DB_PATH": "~/.config/pm-ai/db.sqlite"
+      }
+    }
+  }
+}
+```
+
+### Custom Database Path (Optional)
+
+If you want to use a custom database location, set the `PMAI_DB_PATH` environment variable:
+
+```json
+{
+  "mcpServers": {
+    "pm-ai": {
+      "command": "node",
+      "args": ["/Users/yourname/Documents/Projects/pm-ai/apps/mcp/dist/index.js"],
+      "env": {
+        "PMAI_DB_PATH": "/custom/path/to/database.db"
+      }
+    }
+  }
+}
+```
+
+### Testing the Connection
+
+After setting up PM-AI with Claude, try these test conversations:
+
+**Test 1: Check Available Tools**
+```
+User: What tools can you use?
+
+Claude: I have access to the PM-AI tools, including:
+- init_project: Create new projects
+- save_plan: Save project plans with tasks
+- update_task: Update task status and details
+- delete_task: Remove tasks
+- add_task_comment: Add comments to tasks
+- search_tasks: Search for tasks
+- filter_tasks: Filter tasks by status/priority
+- get_task_dependencies: View task dependencies
+- get_critical_path: Analyze critical path
+- open_dashboard: Open web dashboard
+```
+
+**Test 2: Create Your First Project**
+```
+User: I want to start tracking my work on a new project called "my-app"
+
+Claude: [Uses init_project tool]
+✓ Created project "my-app" with ID: abc-123-def
+Your project is ready! You can now add plans and tasks to it.
+```
+
+**Test 3: Open Web Dashboard**
+```
+User: Open the PM-AI dashboard
+
+Claude: [Uses open_dashboard tool]
+✓ Opening dashboard in your default browser...
+```
+
+### Troubleshooting
+
+**Problem: Claude doesn't show PM-AI tools**
+
+**Solutions:**
+1. Check the MCP server is built:
+   ```bash
+   cd pm-ai
+   pnpm build
+   ls apps/mcp/dist/index.js  # Should exist
+   ```
+
+2. Verify the path in your configuration is absolute (not relative):
+   ```json
+   {
+     "command": "node",
+     "args": ["/absolute/path/to/pm-ai/apps/mcp/dist/index.js"]
+   }
+   ```
+
+3. Check Claude Desktop logs for errors:
+   - macOS: `~/Library/Logs/Claude/`
+   - Windows: `%APPDATA%/Claude/logs/`
+   - Linux: `~/.config/Claude/logs/`
+
+4. Make sure Node.js is installed and in your PATH:
+   ```bash
+   node --version  # Should show v18 or higher
+   which node     # Should show node installation path
+   ```
+
+**Problem: "Database not initialized" error**
+
+**Solution:** The database is auto-created on first run. If you see this error:
+1. Check write permissions for `~/.config/pm-ai/`
+2. Try manually creating the directory:
+   ```bash
+   mkdir -p ~/.config/pm-ai
+   ```
+
+**Problem: Web dashboard doesn't open**
+
+**Solutions:**
+1. Check if another service is using port 3000
+2. The MCP server logs will show the actual port if 3000 is busy
+3. Access manually: `http://localhost:3000`
+
+**Problem: Changes not reflected in web dashboard**
+
+**Solution:** The web dashboard auto-refreshes, but you can manually refresh the page (`Cmd+R` or `F5`).
+
 ## Quick Start
 
 ### Start Everything (API + Web)
