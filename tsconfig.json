@@ -1,11 +1,10 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/types" },
+    { "path": "./packages/core" },
     { "path": "./packages/utils" },
-    { "path": "./packages/db" },
-    { "path": "./packages/domain" },
     { "path": "./apps/api" },
-    { "path": "./apps/mcp" }
+    { "path": "./apps/mcp" },
+    { "path": "./apps/web" }
   ]
 }
