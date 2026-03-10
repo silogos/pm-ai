@@ -227,7 +227,7 @@ export async function getTasksByStatus(projectId: string, status: TaskStatus): P
 /**
  * Get tasks by priority for a project
  */
-export async function getTasksByPriority(projectId: string, priority: Priority): Promise<TaskWithPlan[]> {
+export async function getTasksByPriority(projectId: string, priority: 'high' | 'medium' | 'low'): Promise<TaskWithPlan[]> {
   const db = getDb();
   const result = await db
     .select({

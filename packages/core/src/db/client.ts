@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from './schema.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import * as fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 let __dirname = path.dirname(__filename);
@@ -33,7 +34,6 @@ export function init(config: DatabaseConfig = {}): ReturnType<typeof drizzle> {
   console.error('[DB] Using database path:', dbPath);
 
   // Ensure the directory exists
-  const fs = await import('fs');
   if (dbPath !== ':memory:') {
     const dbDir = path.dirname(dbPath);
     if (!fs.existsSync(dbDir)) {

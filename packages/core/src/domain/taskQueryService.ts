@@ -72,9 +72,12 @@ export async function filterTasks(projectId: string, filters: TaskFilters): Prom
     conditions.push(inArray(tasks.status, filters.status));
   }
 
-  // Filter by priority
+  // Filter by priority (exclude null values from the array)
   if (filters.priority && filters.priority.length > 0) {
-    conditions.push(inArray(tasks.priority, filters.priority));
+    const nonNullPriorities = filters.priority.filter((p): p is 'high' | 'medium' | 'low' => p !== null);
+    if (nonNullPriorities.length > 0) {
+      conditions.push(inArray(tasks.priority, nonNullPriorities));
+    }
   }
 
   // Filter by plan
@@ -143,9 +146,12 @@ export async function searchAndFilterTasks(
     conditions.push(inArray(tasks.status, filters.status));
   }
 
-  // Filter by priority
+  // Filter by priority (exclude null values from the array)
   if (filters.priority && filters.priority.length > 0) {
-    conditions.push(inArray(tasks.priority, filters.priority));
+    const nonNullPriorities = filters.priority.filter((p): p is 'high' | 'medium' | 'low' => p !== null);
+    if (nonNullPriorities.length > 0) {
+      conditions.push(inArray(tasks.priority, nonNullPriorities));
+    }
   }
 
   // Filter by plan
