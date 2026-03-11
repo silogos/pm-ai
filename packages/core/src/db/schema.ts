@@ -1,10 +1,22 @@
 import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
+export const workspaces = sqliteTable('workspaces', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),        // Folder name
+  path: text('path').notNull(),        // Absolute path to workspace folder
+  description: text('description'),    // Optional: AI-summarized or user-provided
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+  updatedAt: text('updated_at').default(sql`(CURRENT_TIMESTAMP)`).notNull()
+});
+
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull()
+  description: text('description'),    // AI-summarized on init
+  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+  updatedAt: text('updated_at').default(sql`(CURRENT_TIMESTAMP)`).notNull()
 });
 
 export const plans = sqliteTable('plans', {
@@ -34,6 +46,8 @@ export const taskComments = sqliteTable('task_comments', {
 });
 
 // Domain types inferred from schema
+export type Workspace = typeof workspaces.$inferSelect;
+export type NewWorkspace = typeof workspaces.$inferInsert;
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 export type Plan = typeof plans.$inferSelect;

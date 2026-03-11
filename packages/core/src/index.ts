@@ -3,13 +3,19 @@
 // ============================================================================
 
 // Database client
-export { init, getDb } from './db/client.js';
+export { init, getDb, closeDatabase } from './db/client.js';
+
+// Migration runner
+export { runMigrations } from './db/migrate.js';
+export type { MigrationConfig } from './db/migrate.js';
 
 // Schema tables
-export { projects, plans, tasks, taskComments } from './db/schema.js';
+export { workspaces, projects, plans, tasks, taskComments } from './db/schema.js';
 
 // Domain types (inferred from Drizzle schema)
 export type {
+  Workspace,
+  NewWorkspace,
   Project,
   NewProject,
   Plan,
@@ -57,8 +63,12 @@ export {
 // Project services
 export {
   createProject,
+  createProjectWithDescription,
   getProjectById,
-  getAllProjects
+  getAllProjects,
+  updateProjectDescription,
+  touchProject,
+  getProjectsByWorkspace
 } from './domain/projectService.js';
 
 // Plan services
@@ -67,6 +77,15 @@ export {
   getPlans,
   getPlanById
 } from './domain/planService.js';
+
+export {
+  parseMarkdownPlan,
+  syncPlanFile,
+  importPlansFromFolder,
+  importPlansFromCurrentFolder,
+  type MarkdownPlan,
+  type SyncResult
+} from './domain/planSyncService.js';
 
 // Progress services
 export {
@@ -99,6 +118,24 @@ export {
   type CriticalPathNode,
   type CircularDependency
 } from './domain/dependencyGraphService.js';
+
+// Workspace services
+export {
+  scanWorkspace,
+  scanCurrentWorkspace,
+  getWorkspaceStatistics,
+  findProjectsInDirectory,
+  createWorkspace,
+  getWorkspaceById,
+  getWorkspaceByPath,
+  getAllWorkspaces,
+  updateWorkspaceDescription,
+  touchWorkspace,
+  getWorkspaceProjects,
+  type WorkspaceProject,
+  type WorkspaceOverview,
+  type PmAiConfig
+} from './domain/workspaceService.js';
 
 // ============================================================================
 // Types

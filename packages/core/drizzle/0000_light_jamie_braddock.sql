@@ -9,8 +9,12 @@ CREATE TABLE `plans` (
 --> statement-breakpoint
 CREATE TABLE `projects` (
 	`id` text PRIMARY KEY NOT NULL,
+	`workspace_id` text NOT NULL,
 	`name` text NOT NULL,
-	`created_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL
+	`description` text,
+	`created_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	`updated_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `task_comments` (
@@ -31,4 +35,13 @@ CREATE TABLE `tasks` (
 	`dependencies` text,
 	`status` text NOT NULL,
 	FOREIGN KEY (`plan_id`) REFERENCES `plans`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `workspaces` (
+	`id` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`path` text NOT NULL,
+	`description` text,
+	`created_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	`updated_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL
 );

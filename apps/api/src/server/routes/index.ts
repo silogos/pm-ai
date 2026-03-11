@@ -4,12 +4,22 @@ import { zValidator } from '@hono/zod-validator';
 import {
   getAllProjects,
   getProjectById,
-  createProject
+  createProject,
+  createProjectWithDescription,
+  getWorkspaceByPath
 } from '@pm-ai/core';
 import {
   getPlans,
   getPlanById,
   savePlan
+} from '@pm-ai/core';
+import {
+  importPlansFromFolder
+} from '@pm-ai/core';
+import {
+  scanWorkspace,
+  scanCurrentWorkspace,
+  getWorkspaceStatistics
 } from '@pm-ai/core';
 import {
   getTasks,
@@ -45,7 +55,9 @@ const app = new Hono();
 
 // Validation schemas
 const createProjectSchema = z.object({
-  name: z.string().min(1).max(255)
+  name: z.string().min(1).max(255),
+  workspaceId: z.string().uuid().optional(),
+  description: z.string().optional()
 });
 
 const createPlanSchema = z.object({
@@ -106,8 +118,33 @@ app.get('/projects', async (c) => {
 // POST /api/projects - Create a new project
 app.post('/projects', zValidator('json', createProjectSchema), async (c) => {
   try {
-    const { name } = c.req.valid('json');
-    const projectId = await createProject(name);
+    const { name, workspaceId, description } = c.req.valid('json');
+    let projectId: string;
+
+    // If no workspaceId provided, try to find workspace by current directory
+    let finalWorkspaceId = workspaceId;
+    if (!finalWorkspaceId) {
+      const currentPath = process.cwd();
+      const existingWorkspace = await getWorkspaceByPath(currentPath);
+      if (existingWorkspace) {
+        finalWorkspaceId = existingWorkspace.id;
+      } else {
+        return c.json({
+          error: {
+            message: 'No workspace found. Please provide workspaceId or run init pm-ai first.',
+            code: 'NO_WORKSPACE',
+            statusCode: 400
+          }
+        }, 400);
+      }
+    }
+
+    if (description) {
+      projectId = await createProjectWithDescription(name, finalWorkspaceId, description);
+    } else {
+      projectId = await createProject(name, finalWorkspaceId);
+    }
+
     const project = await getProjectById(projectId);
 
     if (!project) {
@@ -419,6 +456,79 @@ app.delete('/tasks/:taskId/comments/:commentId', async (c) => {
     const commentId = c.req.param('commentId');
     await deleteComment(commentId);
     return c.body(null, 204);
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
+// ==================== Workspace ====================
+
+// GET /api/workspace - Get workspace overview
+app.get('/workspace', async (c) => {
+  try {
+    const workspacePath = c.req.query('path') || process.cwd();
+    const maxDepth = c.req.query('maxDepth') ? parseInt(c.req.query('maxDepth') as string) : 3;
+
+    const overview = await scanWorkspace(workspacePath, maxDepth);
+    const stats = await getWorkspaceStatistics(workspacePath);
+
+    return c.json({
+      workspace: {
+        path: overview.rootPath,
+        total_projects: overview.totalProjects,
+        statistics: stats
+      },
+      projects: overview.projects
+    });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
+// GET /api/workspace/current - Get current workspace overview
+app.get('/workspace/current', async (c) => {
+  try {
+    const overview = await scanCurrentWorkspace();
+    const stats = await getWorkspaceStatistics(process.cwd());
+
+    return c.json({
+      workspace: {
+        path: overview.rootPath,
+        total_projects: overview.totalProjects,
+        statistics: stats
+      },
+      projects: overview.projects
+    });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
+// POST /api/projects/sync - Sync plans from markdown files
+app.post('/projects/sync', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { projectId, folderPath } = body;
+
+    if (!projectId) {
+      return c.json({
+        error: {
+          message: 'projectId is required',
+          code: 'MISSING_PROJECT_ID',
+          statusCode: 400
+        }
+      }, 400);
+    }
+
+    const syncPath = folderPath || process.cwd();
+    const result = await importPlansFromFolder(projectId, syncPath);
+
+    return c.json({
+      success: true,
+      project_id: projectId,
+      folder_path: syncPath,
+      result
+    });
   } catch (err) {
     return handleError(err as Error, c);
   }

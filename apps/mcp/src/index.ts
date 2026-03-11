@@ -4,8 +4,9 @@ import * as fs from 'fs';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { init } from '@pm-ai/core';
+import { init, runMigrations } from '@pm-ai/core';
 import { registerInitProjectTool } from './mcp/tools/initProject.js';
+import { registerInitProjectInCurrentFolderTool } from './mcp/tools/initProjectInCurrentFolder.js';
 import { registerSavePlanTool } from './mcp/tools/savePlan.js';
 import { registerUpdateTaskTool } from './mcp/tools/updateTask.js';
 import { registerDeleteTaskTool } from './mcp/tools/deleteTask.js';
@@ -20,6 +21,8 @@ import { registerPlansResource } from './mcp/resources/plans.js';
 import { registerTasksResource } from './mcp/resources/tasks.js';
 import { registerProgressResource } from './mcp/resources/progress.js';
 import { registerOpenDashboardTool } from './mcp/tools/openDashboard.js';
+import { registerScanWorkspaceTool, registerScanCurrentWorkspaceTool } from './mcp/tools/scanWorkspace.js';
+import { registerSyncPlansFromFilesTool, registerSyncCurrentFolderTool } from './mcp/tools/syncPlansFromFiles.js';
 import { getConfig } from './config/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -89,8 +92,11 @@ async function main() {
     console.error('⚠️  Starting server anyway, but AI may not understand PM-AI workflow.');
   }
 
+  // Run migrations first to ensure schema is up to date
+  await runMigrations({ dbPath: config.dbPath });
+
   // Initialize database
-  init({ path: config.dbPath });
+  await init({ path: config.dbPath });
   const server = new McpServer({
     name: 'pm-ai-server',
     version: '1.0.0'
@@ -103,6 +109,21 @@ async function main() {
   // Register MCP tools
   await registerInitProjectTool(server);
   console.error('Tool registered: init_project');
+
+  await registerInitProjectInCurrentFolderTool(server);
+  console.error('Tool registered: init_project_in_current_folder');
+
+  await registerScanWorkspaceTool(server);
+  console.error('Tool registered: scan_workspace');
+
+  await registerScanCurrentWorkspaceTool(server);
+  console.error('Tool registered: show_workspace');
+
+  await registerSyncPlansFromFilesTool(server);
+  console.error('Tool registered: sync_plans_from_files');
+
+  await registerSyncCurrentFolderTool(server);
+  console.error('Tool registered: sync_current_folder');
 
   await registerInjectClaudeMdTool(server);
   console.error('Tool registered: inject_claude_md');

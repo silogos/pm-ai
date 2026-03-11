@@ -22,17 +22,20 @@ if (__dirname.endsWith('/src/db') || __dirname.endsWith('\\src/db') ||
   __dirname = path.dirname(__dirname);
 }
 
-// Default database path is in the user's config directory
 const defaultDbPath = path.join(homedir(), ".config", "pm-ai", "pm-ai.db");
+
+export interface MigrationConfig {
+  dbPath?: string;
+  inMemory?: boolean;
+}
 
 /**
  * Get connection string from config
- * Handles path normalization, ~ expansion, and relative-to-absolute conversion
  */
-function getConnection(config: DatabaseConfig): string {
+function getConnection(config: MigrationConfig): string {
   let dbPath = config.inMemory
     ? ':memory:'
-    : config.path || defaultDbPath;
+    : config.dbPath || defaultDbPath;
 
   // Expand ~ to home directory
   if (dbPath.startsWith('~')) {
@@ -48,23 +51,20 @@ function getConnection(config: DatabaseConfig): string {
   return dbPath === ':memory:' ? ':memory:' : `file:${dbPath}`;
 }
 
-export interface DatabaseConfig {
-  path?: string;  // Database file path
-  inMemory?: boolean;  // Use in-memory database for testing
-  skipMigrations?: boolean;  // Skip running migrations (useful for tests)
-}
-
-let dbInstance: ReturnType<typeof drizzle> | null = null;
-let libsqlClient: ReturnType<typeof createClient> | null = null;
-
-export async function init(config: DatabaseConfig = {}): Promise<ReturnType<typeof drizzle>> {
+/**
+ * Run database migrations using the official Drizzle migrator
+ *
+ * This uses the standard Drizzle migration system which:
+ * 1. Reads migration files from the drizzle folder
+ * 2. Tracks applied migrations in __drizzle_migrations table
+ * 3. Only applies new migrations that haven't been run yet
+ */
+export async function runMigrations(config: MigrationConfig = {}): Promise<void> {
   const connectionString = getConnection(config);
-
-  // Extract dbPath from connection string for logging and migrations
   const dbPath = connectionString === ':memory:' ? ':memory:' : connectionString.replace('file:', '');
 
-  console.error('[DB] __dirname:', __dirname);
-  console.error('[DB] Using database path:', dbPath);
+  console.error('[Migrations] Starting Drizzle migrations...');
+  console.error('[Migrations] Database path:', dbPath);
 
   // Ensure the directory exists
   if (dbPath !== ':memory:') {
@@ -74,47 +74,25 @@ export async function init(config: DatabaseConfig = {}): Promise<ReturnType<type
     }
   }
 
-  libsqlClient = createClient({ url: connectionString });
-  await libsqlClient.execute('PRAGMA foreign_keys = ON');
-
-  dbInstance = drizzle({ client: libsqlClient, schema });
-
-  // Run migrations if not skipped
-  if (!config.skipMigrations) {
-    await runMigrations();
-  }
-
-  return dbInstance;
-}
-
-async function runMigrations(): Promise<void> {
-  // Path to migrations folder
-  // The migrations folder is at packages/core/drizzle (sibling to package root)
-  const migrationsFolder = path.join(__dirname, 'drizzle');
-
-  console.error('[DB] Running migrations from:', migrationsFolder);
+  // Create libsql client and drizzle db instance
+  const client = createClient({ url: connectionString });
+  const db = drizzle({ client, schema });
 
   try {
+    // Enable foreign keys
+    await client.execute('PRAGMA foreign_keys = ON');
+
+    // Path to migrations folder
+    // The migrations folder is at packages/core/drizzle (sibling to package root)
+    const migrationsFolder = path.join(__dirname, 'drizzle');
+
+    console.error('[Migrations] Applying migrations from:', migrationsFolder);
+
     // Use official Drizzle migrator
-    await migrate(dbInstance!, { migrationsFolder });
-    console.error('[DB] Migrations completed successfully');
-  } catch (error) {
-    console.error('[DB] Migration error:', error);
-    throw error;
-  }
-}
+    await migrate(db, { migrationsFolder });
 
-export function getDb(): ReturnType<typeof drizzle> {
-  if (!dbInstance) {
-    throw new Error('Database not initialized. Call init() first.');
-  }
-  return dbInstance;
-}
-
-export async function closeDatabase(): Promise<void> {
-  if (libsqlClient) {
-    await libsqlClient.close();
-    libsqlClient = null;
-    dbInstance = null;
+    console.error('[Migrations] Completed successfully');
+  } finally {
+    await client.close();
   }
 }

@@ -50,9 +50,64 @@ This project uses PM-AI for project management. When working on this project, fo
    → "Filter tasks by status: planned"
    → Use web dashboard for visual view
 
+### Folder-Based Workflow
+
+PM-AI now supports folder-based project management for a more natural workflow:
+
+1. **Initialize PM-AI in Current Folder**
+   → "init pm-ai" or "set up PM-AI here" or "initialize PM-AI project"
+   → Creates `.pm-ai` config file in current directory
+   → Uses folder name as project name
+
+2. **Sync Markdown Plans**
+   → "sync plans from files" or "import markdown files"
+   → Scans folder for `.md` files
+   → Each file becomes a plan (first heading = title)
+
+3. **View Workspace**
+   → "show workspace" or "list all PM-AI projects"
+   → Shows all projects in workspace with statistics
+
+4. **Create Plans Naturally**
+   → After AI creates a plan, it asks: "Do you want to save this plan in PM-AI?"
+   → Plans are automatically linked to the current folder's project
+
+**Config File (.pm-ai):**
+\`\`\`json
+{
+  "version": "1.0.0",
+  "projectId": "uuid",
+  "projectName": "my-project",
+  "createdAt": "2026-03-11T00:00:00.000Z",
+  "description": "Optional description"
+}
+\`\`\`
+
+### Folder-Based Examples
+
+\`\`\`
+# Initialize in current folder
+"init pm-ai"
+
+# After creating plan markdown files
+"sync plans from files"
+
+# See all projects in workspace
+"show workspace"
+
+# Navigate to project folder and work
+"show progress of this project"
+\`\`\`
+
 ### Key Tools Reference
 
-- \`init_project\` - Start tracking new work
+**Folder-Based Tools:**
+- \`init_project_in_current_folder\` - Initialize PM-AI in current directory (creates .pm-ai config)
+- \`scan_workspace\` / \`show_workspace\` - Show all PM-AI projects in workspace
+- \`sync_plans_from_files\` / \`sync_current_folder\` - Import .md files as plans
+
+**Core Tools:**
+- \`init_project\` - Start tracking new work (with explicit name)
 - \`save_plan\` - Save plans with tasks
 - \`update_task\` - Change task status/details
 - \`get_critical_path\` - Find blockers

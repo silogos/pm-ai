@@ -2,7 +2,10 @@
 export interface Project {
   id: string;
   name: string;
+  folderPath?: string | null;
+  description?: string | null;
   createdAt: string;
+  updatedAt?: string;
   progress?: ProgressStats;
 }
 
@@ -136,4 +139,41 @@ export interface CriticalPathResponse {
     path: CriticalPathNode[];
     length: number;
   };
+}
+
+// Workspace Types
+export interface WorkspaceProject {
+  id: string;
+  name: string;
+  folderPath: string | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+  progress?: ProgressStats;
+}
+
+export interface WorkspaceOverview {
+  path: string;
+  total_projects: number;
+  statistics: {
+    totalProjects: number;
+    totalTasks: number;
+    completedTasks: number;
+    overallProgress: number;
+  };
+  projects: WorkspaceProject[];
+}
+
+export interface WorkspaceResponse {
+  workspace: {
+    path: string;
+    total_projects: number;
+    statistics: {
+      totalProjects: number;
+      totalTasks: number;
+      completedTasks: number;
+      overallProgress: number;
+    };
+  };
+  projects: WorkspaceProject[];
 }

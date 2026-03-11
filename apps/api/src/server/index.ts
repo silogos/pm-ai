@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
-import { init } from '@pm-ai/core'
+import { init, runMigrations } from '@pm-ai/core'
 import { apiRoutes } from './routes/index.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -24,8 +24,11 @@ export interface WebServerInfo {
 }
 
 export async function createWebServer(config: WebServerConfig = {}): Promise<WebServerInfo> {
+  // Run migrations first to ensure schema is up to date
+  await runMigrations({ dbPath: config.dbPath });
+
   // Initialize database with default path (~/.config/pm-ai/pmai.db)
-  await init({});
+  await init({ path: config.dbPath });
 
   const app = new Hono();
 

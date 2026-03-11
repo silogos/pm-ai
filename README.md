@@ -13,6 +13,13 @@ A comprehensive **Model Context Protocol (MCP)** server for intelligent project 
 - **Comments**: Add comments to tasks for collaboration and documentation
 - **Project Organization**: Group plans and tasks by project with proper foreign key relationships
 
+### Folder-Based Workflow
+
+- **Folder-Linked Projects**: Link projects to folders for automatic context
+- **Markdown Plan Sync**: Import `.md` files as plans with auto-detection
+- **Workspace Overview**: View all projects across your workspace
+- **Config-Based Init**: Natural language initialization creates `.pm-ai` config files
+
 ### Web Dashboard
 - **Visual Project Management**: Beautiful web interface for managing projects through a browser
 - **Task Board (Kanban)**: Drag-and-drop task board with Planned, In Review, and Done columns
@@ -438,6 +445,66 @@ Get the critical path (longest dependency chain) for a project.
 - `project_id` (string): The project ID
 - `check_circular` (boolean, optional): Check for circular dependencies
 
+### `init_project_in_current_folder`
+Initialize PM-AI in the current working directory. Creates a `.pm-ai` config file and links the folder to a project.
+
+**Parameters:**
+- `description` (string, optional): Optional description for the project
+
+**What it does:**
+- Detects current working directory automatically
+- Uses folder name as project name
+- Creates `.pm-ai` config file with project metadata
+- Links folder to existing or new project in database
+
+**When to use:**
+- User says "init pm-ai", "set up PM-AI here", or "initialize PM-AI project"
+- Starting work in a new folder/project
+
+### `show_workspace` / `scan_workspace`
+Show all PM-AI projects in the workspace.
+
+**Parameters (scan_workspace only):**
+- `workspace_path` (string, optional): Path to scan (defaults to current directory)
+- `max_depth` (number, optional): Maximum depth to scan (default: 3)
+
+**Returns:**
+- List of all projects with statistics
+- Task counts and completion percentages
+- Folder paths for folder-linked projects
+
+**When to use:**
+- User says "show workspace", "list all PM-AI projects"
+- Getting overview of all projects in workspace
+
+### `sync_plans_from_files` / `sync_current_folder`
+Scan a folder for markdown (`.md`) files and import them as plans.
+
+**Parameters (sync_plans_from_files only):**
+- `project_id` (string, optional): Project ID (auto-detected from `.pm-ai` if not provided)
+- `folder_path` (string, optional): Folder path to scan (defaults to current directory)
+
+**What it does:**
+- Recursively scans folder for `.md` files
+- Uses first heading (`# Title`) as plan title
+- Creates or updates plans in database
+- Skips files in hidden directories and node_modules
+
+**When to use:**
+- User says "sync plans from files", "import markdown files"
+- After creating plan markdown files manually
+
+**Config File Format (.pm-ai):**
+```json
+{
+  "version": "1.0.0",
+  "projectId": "uuid",
+  "projectName": "my-project",
+  "createdAt": "2026-03-11T00:00:00.000Z",
+  "description": "Optional description"
+}
+```
+
 ## MCP Resources
 
 - `pmai://plans/{project_id}` - Get all plans for a project
@@ -504,6 +571,84 @@ I can help you manage projects using PM-AI. Here's what I understand:
 **When to re-run:**
 - First time setting up PM-AI in a project
 - To refresh the workflow (use `overwrite: true`)
+
+### Workflow 0.5: Folder-Based Project Management
+
+Use this workflow for natural, folder-based project management.
+
+**Step 1: Initialize PM-AI in current folder**
+```
+User: "init pm-ai"
+
+Claude uses: init_project_in_current_folder tool
+{
+  // No parameters needed - auto-detects current directory
+}
+
+Returns: {
+  "project_id": "abc-123-def",
+  "project_name": "my-project",
+  "folder_path": "/path/to/current/folder",
+  "config_file": "/path/to/current/folder/.pm-ai"
+}
+```
+
+**What happens:**
+- Creates `.pm-ai` config file in current directory
+- Uses folder name as project name
+- Links folder to project in database
+
+**Step 2: Create markdown plan files**
+```
+User creates: /path/to/project/plan-authentication.md
+Content:
+# Authentication Feature
+
+## Tasks
+- Implement OAuth login
+- Add JWT token support
+- Create password reset
+```
+
+**Step 3: Sync plans from files**
+```
+User: "sync plans from files"
+
+Claude uses: sync_current_folder tool
+
+Returns: {
+  "imported": 1,
+  "updated": 0,
+  "message": "Synced 1 new plan"
+}
+```
+
+**Step 4: View workspace**
+```
+User: "show workspace"
+
+Claude uses: show_workspace tool
+
+Returns: {
+  "total_projects": 3,
+  "projects": [
+    {
+      "id": "abc-123-def",
+      "name": "my-project",
+      "folder_path": "/path/to/current/folder",
+      "statistics": { "totalTasks": 3, "completed": 0 }
+    },
+    // ... more projects
+  ]
+}
+```
+
+**Benefits:**
+- ✅ Natural folder-based workflow
+- ✅ Projects linked to actual code folders
+- ✅ Version control for plan files (.md in git)
+- ✅ Quick workspace overview
+- ✅ Auto-detection of project context
 
 ### Workflow 1: Starting a New Project
 

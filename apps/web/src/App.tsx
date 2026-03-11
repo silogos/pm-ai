@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-ro
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ProjectList from './components/ProjectList';
 import ProjectDashboard from './components/ProjectDashboard';
+import { WorkspaceOverview } from './components/WorkspaceOverview';
 import './styles/App.css';
 
 const queryClient = new QueryClient({
@@ -22,11 +23,13 @@ function App() {
             <h1>PM-AI Dashboard</h1>
             <nav className="app-nav">
               <Link to="/">Projects</Link>
+              <Link to="/workspace">Workspace</Link>
             </nav>
           </header>
           <main className="app-main">
             <Routes>
               <Route path="/" element={<ProjectList />} />
+              <Route path="/workspace" element={<WorkspaceOverview />} />
               <Route path="/project/:id" element={<ProjectDashboard />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

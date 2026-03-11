@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createProject } from '@pm-ai/core';
+import { createProject, createWorkspace, getWorkspaceByPath } from '@pm-ai/core';
 import { getTasks, parseDependencies } from '@pm-ai/core';
 import { updateTaskStatus } from '@pm-ai/core';
 import { getProjectProgress } from '@pm-ai/core';
@@ -8,15 +8,37 @@ const commands = {
   'create-project': async (args: string[]) => {
     const name = args[0];
     if (!name) {
-      console.error('Usage: pm-ai create-project <project-name>');
+      console.error('Usage: pm-ai create-project <project-name> [workspace-id]');
       process.exit(1);
     }
 
+    const workspaceId = args[1];
+
     try {
-      const projectId = await createProject(name);
+      let finalWorkspaceId = workspaceId;
+
+      // If no workspaceId provided, try to find workspace by current directory
+      if (!finalWorkspaceId) {
+        const { cwd } = await import('process');
+        const currentPath = cwd();
+        const existingWorkspace = await getWorkspaceByPath(currentPath);
+
+        if (existingWorkspace) {
+          finalWorkspaceId = existingWorkspace.id;
+        } else {
+          // Create a new workspace for the current directory
+          const { basename } = await import('path');
+          const folderName = basename(currentPath);
+          finalWorkspaceId = await createWorkspace(folderName, currentPath);
+          console.log(`Created new workspace for current directory: ${finalWorkspaceId}`);
+        }
+      }
+
+      const projectId = await createProject(name, finalWorkspaceId);
       console.log(`Project created successfully!`);
       console.log(`Project ID: ${projectId}`);
       console.log(`Project Name: ${name}`);
+      console.log(`Workspace ID: ${finalWorkspaceId}`);
     } catch (error) {
       console.error('Failed to create project:', error);
       process.exit(1);
