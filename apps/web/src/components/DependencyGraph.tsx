@@ -10,7 +10,7 @@ import type { Node, Edge, NodeTypes } from 'reactflow';
 import 'reactflow/dist/style.css';
 import dagre from 'dagre';
 
-import { projectsApi } from '../services/api';
+import { plansApi } from '../services/api';
 import type { Task } from '../types';
 import TaskNode from './nodes/TaskNode';
 
@@ -19,22 +19,22 @@ const nodeTypes: NodeTypes = {
 };
 
 interface DependencyGraphProps {
-  projectId: string;
+  planId: string;
 }
 
-export default function DependencyGraph({ projectId }: DependencyGraphProps) {
+export default function DependencyGraph({ planId }: DependencyGraphProps) {
   const { data: tasksData } = useQuery({
-    queryKey: ['tasks', projectId],
+    queryKey: ['tasks', planId],
     queryFn: async () => {
-      const response = await projectsApi.getTasks(projectId);
+      const response = await plansApi.getTasks(planId);
       return response.data;
     }
   });
 
   const { data: criticalPathData } = useQuery({
-    queryKey: ['critical-path', projectId],
+    queryKey: ['critical-path', planId],
     queryFn: async () => {
-      const response = await projectsApi.getCriticalPath(projectId);
+      const response = await plansApi.getCriticalPath(planId);
       return response.data;
     }
   });

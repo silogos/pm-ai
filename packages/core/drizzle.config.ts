@@ -1,5 +1,5 @@
 import { defineConfig } from 'drizzle-kit';
-import { DEFAULT_DB_PATH } from './src/config/database.js';
+import { DEFAULT_DB_PATH } from './src/config/database.ts';
 
 export default defineConfig({
   schema: './src/db/schema.ts',

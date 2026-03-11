@@ -104,7 +104,12 @@ export async function createWebServer(config: WebServerConfig = {}): Promise<Web
   server.on('error', (err: any) => {
     if (err.code === 'EADDRINUSE') {
       console.error(`❌ Port ${port} is already in use!`);
-      console.error(`💡 Try: PORT=3000 pnpm dev:api`);
+      console.error(`💡 This may indicate multiple MCP agents are running concurrently.`);
+      console.error(`💡 Each agent will use a different port via get-port.`);
+      console.error(`💡 Solutions:`);
+      console.error(`   1. Set PORT environment variable: PORT=3000 pnpm dev:api`);
+      console.error(`   2. Let MCP server manage HTTP server spawning (recommended)`);
+      console.error(`   3. Stop the conflicting process`);
       process.exit(1);
     }
     throw err;

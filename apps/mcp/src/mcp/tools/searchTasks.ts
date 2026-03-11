@@ -1,11 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { searchTasks } from '@pm-ai/core';
-import { getProjectById } from '@pm-ai/core';
+import { getFeatureById } from '@pm-ai/core';
 import { parseDependencies } from '@pm-ai/core';
 
 const SearchTasksSchema = z.object({
-  project_id: z.string().describe('The ID of the project to search in'),
+  feature_id: z.string().describe('The ID of the feature to search in'),
   query: z.string().describe('Search query to match against task titles and descriptions')
 });
 
@@ -16,26 +16,26 @@ export async function registerSearchTasksTool(server: McpServer): Promise<void> 
     SearchTasksSchema.shape,
     async (input) => {
       try {
-        // Verify project exists
-        const project = await getProjectById(input.project_id);
-        if (!project) {
+        // Verify feature exists
+        const feature = await getFeatureById(input.feature_id);
+        if (!feature) {
           return {
             content: [{
               type: 'text',
-              text: JSON.stringify({ error: 'Project not found' }, null, 2)
+              text: JSON.stringify({ error: 'Feature not found' }, null, 2)
             }]
           };
         }
 
         // Search for tasks
-        const tasks = await searchTasks(input.project_id, input.query);
+        const tasks = await searchTasks(input.feature_id, input.query);
 
         return {
           content: [{
             type: 'text',
             text: JSON.stringify({
-              project_id: input.project_id,
-              project_name: project.name,
+              feature_id: input.feature_id,
+              feature_name: feature.name,
               query: input.query,
               count: tasks.length,
               tasks: tasks.map(task => ({

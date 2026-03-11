@@ -1,17 +1,28 @@
 // API Response Types
-export interface Project {
+
+// Workspace Types
+export interface Workspace {
   id: string;
   name: string;
-  folderPath?: string | null;
+  path: string;
   description?: string | null;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
+}
+
+export interface Feature {
+  id: string;
+  name: string;
+  description?: string | null;
+  workspaceId: string;
+  createdAt: string;
+  updatedAt: string;
   progress?: ProgressStats;
 }
 
 export interface Plan {
   id: string;
-  projectId: string;
+  featureId: string;
   title: string;
   markdown: string;
   createdAt: string;
@@ -72,12 +83,13 @@ export interface DependencyGraph {
 }
 
 // API Request Types
-export interface CreateProjectRequest {
+export interface CreateFeatureRequest {
   name: string;
+  description?: string;
 }
 
 export interface CreatePlanRequest {
-  projectId: string;
+  featureId: string;
   title: string;
   markdown: string;
 }
@@ -96,12 +108,22 @@ export interface AddCommentRequest {
 }
 
 // API Response Wrappers
-export interface ProjectsResponse {
-  projects: Project[];
+export interface WorkspacesResponse {
+  workspaces: Workspace[];
 }
 
-export interface ProjectResponse {
-  project: Project & {
+export interface WorkspaceResponse {
+  workspace: Workspace & {
+    features?: Feature[];
+  };
+}
+
+export interface FeaturesResponse {
+  features: Feature[];
+}
+
+export interface FeatureResponse {
+  feature: Feature & {
     plans?: Plan[];
     tasks?: Task[];
   };
@@ -141,7 +163,17 @@ export interface CriticalPathResponse {
   };
 }
 
-// Workspace Types
+// Legacy types for backward compatibility (deprecated)
+export interface Project {
+  id: string;
+  name: string;
+  folderPath?: string | null;
+  description?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  progress?: ProgressStats;
+}
+
 export interface WorkspaceProject {
   id: string;
   name: string;
@@ -150,30 +182,4 @@ export interface WorkspaceProject {
   createdAt: string;
   updatedAt: string;
   progress?: ProgressStats;
-}
-
-export interface WorkspaceOverview {
-  path: string;
-  total_projects: number;
-  statistics: {
-    totalProjects: number;
-    totalTasks: number;
-    completedTasks: number;
-    overallProgress: number;
-  };
-  projects: WorkspaceProject[];
-}
-
-export interface WorkspaceResponse {
-  workspace: {
-    path: string;
-    total_projects: number;
-    statistics: {
-      totalProjects: number;
-      totalTasks: number;
-      completedTasks: number;
-      overallProgress: number;
-    };
-  };
-  projects: WorkspaceProject[];
 }

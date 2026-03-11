@@ -1,20 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { projectsApi, tasksApi } from '../services/api';
+import { plansApi, tasksApi } from '../services/api';
 import type { Task } from '../types';
 
 interface TaskBoardProps {
-  projectId: string;
+  planId: string;
 }
 
-export default function TaskBoard({ projectId }: TaskBoardProps) {
+export default function TaskBoard({ planId }: TaskBoardProps) {
   const queryClient = useQueryClient();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['tasks', projectId],
+    queryKey: ['tasks', planId],
     queryFn: async () => {
-      const response = await projectsApi.getTasks(projectId);
+      const response = await plansApi.getTasks(planId);
       return response.data;
     }
   });
@@ -24,8 +24,8 @@ export default function TaskBoard({ projectId }: TaskBoardProps) {
       return tasksApi.update(taskId, { status });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', planId] });
+      queryClient.invalidateQueries({ queryKey: ['plan', planId] });
     }
   });
 

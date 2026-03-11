@@ -1,7 +1,9 @@
 import axios from 'axios';
 import type {
-  ProjectsResponse,
-  ProjectResponse,
+  WorkspacesResponse,
+  WorkspaceResponse,
+  FeaturesResponse,
+  FeatureResponse,
   PlansResponse,
   PlanResponse,
   TasksResponse,
@@ -9,7 +11,7 @@ import type {
   CommentsResponse,
   ProgressResponse,
   CriticalPathResponse,
-  CreateProjectRequest,
+  CreateFeatureRequest,
   CreatePlanRequest,
   UpdateTaskRequest,
   AddCommentRequest
@@ -26,24 +28,33 @@ const api = axios.create({
   }
 });
 
-// Projects API
-export const projectsApi = {
-  getAll: () => api.get<ProjectsResponse>('/projects'),
-  getById: (id: string) => api.get<ProjectResponse>(`/projects/${id}`),
-  create: (data: CreateProjectRequest) => api.post<ProjectResponse>('/projects', data),
-  getPlans: (id: string) => api.get<PlansResponse>(`/projects/${id}/plans`),
+// Workspaces API
+export const workspacesApi = {
+  getAll: () => api.get<WorkspacesResponse>('/workspaces'),
+  getById: (id: string) => api.get<WorkspaceResponse>(`/workspaces/${id}`)
+};
+
+// Features API
+export const featuresApi = {
+  getAll: (workspaceId?: string) =>
+    api.get<FeaturesResponse>(workspaceId ? `/workspaces/${workspaceId}/features` : '/features'),
+  getById: (id: string) => api.get<FeatureResponse>(`/features/${id}`),
+  create: (data: CreateFeatureRequest) => api.post<FeatureResponse>('/features', data),
+  getPlans: (id: string) => api.get<PlansResponse>(`/features/${id}/plans`),
   getTasks: (id: string, status?: string, priority?: string) =>
-    api.get<TasksResponse>(`/projects/${id}/tasks`, {
+    api.get<TasksResponse>(`/features/${id}/tasks`, {
       params: { status, priority }
     }),
-  getProgress: (id: string) => api.get<ProgressResponse>(`/projects/${id}/progress`),
-  getCriticalPath: (id: string) => api.get<CriticalPathResponse>(`/projects/${id}/critical-path`)
+  getProgress: (id: string) => api.get<ProgressResponse>(`/features/${id}/progress`),
+  getCriticalPath: (id: string) => api.get<CriticalPathResponse>(`/features/${id}/critical-path`)
 };
 
 // Plans API
 export const plansApi = {
+  getById: (id: string) => api.get<PlanResponse>(`/plans/${id}`),
   create: (data: CreatePlanRequest) => api.post<PlanResponse>('/plans', data),
-  getById: (id: string) => api.get<PlanResponse>(`/plans/${id}`)
+  getTasks: (id: string) => api.get<TasksResponse>(`/plans/${id}/tasks`),
+  getCriticalPath: (id: string) => api.get<CriticalPathResponse>(`/plans/${id}/critical-path`)
 };
 
 // Tasks API
@@ -62,6 +73,20 @@ export const tasksApi = {
 // Health check
 export const healthApi = {
   check: () => api.get('/health')
+};
+
+// Legacy projects API (deprecated - for backward compatibility)
+export const projectsApi = {
+  getAll: () => api.get<WorkspacesResponse>('/workspaces'),
+  getById: (id: string) => api.get<WorkspaceResponse>(`/workspaces/${id}`),
+  create: (data: CreateFeatureRequest) => api.post<FeatureResponse>('/features', data),
+  getPlans: (id: string) => api.get<PlansResponse>(`/features/${id}/plans`),
+  getTasks: (id: string, status?: string, priority?: string) =>
+    api.get<TasksResponse>(`/features/${id}/tasks`, {
+      params: { status, priority }
+    }),
+  getProgress: (id: string) => api.get<ProgressResponse>(`/features/${id}/progress`),
+  getCriticalPath: (id: string) => api.get<CriticalPathResponse>(`/features/${id}/critical-path`)
 };
 
 export default api;

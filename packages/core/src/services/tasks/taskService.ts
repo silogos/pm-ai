@@ -40,7 +40,7 @@ export async function saveTasks(planId: string, tasksData: TaskInput[]): Promise
   return taskIds;
 }
 
-export async function getTasks(projectId: string): Promise<TaskWithPlan[]> {
+export async function getTasks(featureId: string): Promise<TaskWithPlan[]> {
   const db = getDb();
   const result = await db
     .select({
@@ -56,7 +56,7 @@ export async function getTasks(projectId: string): Promise<TaskWithPlan[]> {
     })
     .from(tasks)
     .innerJoin(plans, eq(tasks.planId, plans.id))
-    .where(eq(plans.projectId, projectId));
+    .where(eq(plans.featureId, featureId));
 
   return result.map(row => ({
     id: row.id,
@@ -186,9 +186,9 @@ export async function deleteTask(taskId: string): Promise<boolean> {
 }
 
 /**
- * Get tasks by status for a project
+ * Get tasks by status for a feature
  */
-export async function getTasksByStatus(projectId: string, status: TaskStatus): Promise<TaskWithPlan[]> {
+export async function getTasksByStatus(featureId: string, status: TaskStatus): Promise<TaskWithPlan[]> {
   const db = getDb();
   const result = await db
     .select({
@@ -206,7 +206,7 @@ export async function getTasksByStatus(projectId: string, status: TaskStatus): P
     .innerJoin(plans, eq(tasks.planId, plans.id))
     .where(
       and(
-        eq(plans.projectId, projectId),
+        eq(plans.featureId, featureId),
         eq(tasks.status, status)
       )
     );
@@ -225,9 +225,9 @@ export async function getTasksByStatus(projectId: string, status: TaskStatus): P
 }
 
 /**
- * Get tasks by priority for a project
+ * Get tasks by priority for a feature
  */
-export async function getTasksByPriority(projectId: string, priority: 'high' | 'medium' | 'low'): Promise<TaskWithPlan[]> {
+export async function getTasksByPriority(featureId: string, priority: 'high' | 'medium' | 'low'): Promise<TaskWithPlan[]> {
   const db = getDb();
   const result = await db
     .select({
@@ -245,7 +245,7 @@ export async function getTasksByPriority(projectId: string, priority: 'high' | '
     .innerJoin(plans, eq(tasks.planId, plans.id))
     .where(
       and(
-        eq(plans.projectId, projectId),
+        eq(plans.featureId, featureId),
         eq(tasks.priority, priority)
       )
     );

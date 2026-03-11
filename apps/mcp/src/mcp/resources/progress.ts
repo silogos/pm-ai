@@ -1,12 +1,12 @@
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getProjectProgress } from '@pm-ai/core';
-import { getProjectById } from '@pm-ai/core';
+import { getFeatureProgress } from '@pm-ai/core';
+import { getFeatureById } from '@pm-ai/core';
 
 export async function registerProgressResource(server: McpServer): Promise<void> {
   // Create a resource template for progress
-  const progressTemplate = new ResourceTemplate('pmai://progress/{project_id}', {
+  const progressTemplate = new ResourceTemplate('pmai://progress/{feature_id}', {
     list: async () => {
-      // Return empty list as actual resources depend on project_id
+      // Return empty list as actual resources depend on feature_id
       return {
         resources: []
       };
@@ -18,34 +18,34 @@ export async function registerProgressResource(server: McpServer): Promise<void>
     'progress',
     progressTemplate,
     {
-      description: 'Get progress statistics for a specific project'
+      description: 'Get progress statistics for a specific feature'
     },
     async (uri, variables, _extra) => {
       try {
-        const projectId = variables.project_id as string;
+        const featureId = variables.feature_id as string;
 
-        // Verify project exists
-        const project = await getProjectById(projectId);
-        if (!project) {
+        // Verify feature exists
+        const feature = await getFeatureById(featureId);
+        if (!feature) {
           return {
             contents: [{
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify({ error: 'Project not found' }, null, 2)
+              text: JSON.stringify({ error: 'Feature not found' }, null, 2)
             }]
           };
         }
 
         // Get progress stats
-        const progress = await getProjectProgress(projectId);
+        const progress = await getFeatureProgress(featureId);
 
         return {
           contents: [{
             uri: uri.href,
             mimeType: 'application/json',
             text: JSON.stringify({
-              project_id: projectId,
-              project_name: project.name,
+              feature_id: featureId,
+              feature_name: feature.name,
               progress: {
                 summary: {
                   total: progress.total,

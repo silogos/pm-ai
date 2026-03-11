@@ -58,7 +58,7 @@ export async function parseMarkdownPlan(filePath: string): Promise<MarkdownPlan 
 /**
  * Sync a single plan file to the database
  */
-export async function syncPlanFile(projectId: string, filePath: string): Promise<Plan | null> {
+export async function syncPlanFile(featureId: string, filePath: string): Promise<Plan | null> {
   const db = getDb();
 
   // Parse the markdown file
@@ -71,7 +71,7 @@ export async function syncPlanFile(projectId: string, filePath: string): Promise
   const existingPlans = await db
     .select()
     .from(plans)
-    .where(and(eq(plans.projectId, projectId), eq(plans.title, markdownPlan.title)))
+    .where(and(eq(plans.featureId, featureId), eq(plans.title, markdownPlan.title)))
     .limit(1);
 
   if (existingPlans.length > 0) {
@@ -92,7 +92,7 @@ export async function syncPlanFile(projectId: string, filePath: string): Promise
   const planId = randomUUID();
   await db.insert(plans).values({
     id: planId,
-    projectId,
+    featureId,
     title: markdownPlan.title,
     markdown: markdownPlan.content
   });
@@ -103,7 +103,7 @@ export async function syncPlanFile(projectId: string, filePath: string): Promise
 /**
  * Import all .md files from a folder as plans
  */
-export async function importPlansFromFolder(projectId: string, folderPath: string): Promise<SyncResult> {
+export async function importPlansFromFolder(featureId: string, folderPath: string): Promise<SyncResult> {
   const result: SyncResult = {
     imported: 0,
     updated: 0,
@@ -122,9 +122,9 @@ export async function importPlansFromFolder(projectId: string, folderPath: strin
           continue;
         }
 
-        const beforeSync = await dbSelectCountByProject(projectId);
-        const plan = await syncPlanFile(projectId, filePath);
-        const afterSync = await dbSelectCountByProject(projectId);
+        const beforeSync = await dbSelectCountByProject(featureId);
+        const plan = await syncPlanFile(featureId, filePath);
+        const afterSync = await dbSelectCountByProject(featureId);
 
         if (plan) {
           if (afterSync > beforeSync) {
@@ -164,11 +164,11 @@ export async function importPlansFromCurrentFolder(): Promise<SyncResult | null>
     const configContent = await fs.readFile(configPath, 'utf-8');
     const config = JSON.parse(configContent);
 
-    if (!config.projectId) {
-      throw new Error('Invalid .pm-ai config: missing projectId');
+    if (!config.featureId) {
+      throw new Error('Invalid .pm-ai config: missing featureId');
     }
 
-    return await importPlansFromFolder(config.projectId, currentPath);
+    return await importPlansFromFolder(config.featureId, currentPath);
   } catch (error) {
     console.error('Error importing plans from current folder:', error);
     return null;
@@ -209,11 +209,11 @@ async function findMarkdownFiles(dirPath: string, depth: number = 0, maxDepth: n
 /**
  * Helper function to count plans by project (before/after sync)
  */
-async function dbSelectCountByProject(projectId: string): Promise<number> {
+async function dbSelectCountByProject(featureId: string): Promise<number> {
   const db = getDb();
   const result = await db
     .select()
     .from(plans)
-    .where(eq(plans.projectId, projectId));
+    .where(eq(plans.featureId, featureId));
   return result.length;
 }

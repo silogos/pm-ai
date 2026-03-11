@@ -36,12 +36,12 @@ export interface DependencyGraph {
 }
 
 // API Request Types
-export interface CreateProjectRequest {
+export interface CreateFeatureRequest {
   name: string;
 }
 
 export interface CreatePlanRequest {
-  projectId: string;
+  featureId: string;
   title: string;
   markdown: string;
 }
@@ -60,12 +60,12 @@ export interface AddCommentRequest {
 }
 
 // API Response Wrappers
-export interface ProjectsResponse {
-  projects: import('../db/schema.js').Project[];
+export interface FeaturesResponse {
+  features: import('../db/schema.js').Feature[];
 }
 
-export interface ProjectResponse {
-  project: import('../db/schema.js').Project & {
+export interface FeatureResponse {
+  feature: import('../db/schema.js').Feature & {
     plans?: import('../db/schema.js').Plan[];
     tasks?: import('../db/schema.js').Task[];
   };

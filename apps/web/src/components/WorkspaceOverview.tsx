@@ -1,9 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { WorkspaceResponse, WorkspaceProject } from '../types';
+import type { Feature } from '../types';
+
+interface WorkspaceData {
+  workspace: {
+    path: string;
+    total_features: number;
+    statistics: {
+      totalFeatures: number;
+      totalTasks: number;
+      completedTasks: number;
+      overallProgress: number;
+    };
+  };
+  features: Feature[];
+}
 
 export function WorkspaceOverview() {
-  const [workspace, setWorkspace] = useState<WorkspaceResponse | null>(null);
+  const [workspace, setWorkspace] = useState<WorkspaceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,7 +28,7 @@ export function WorkspaceOverview() {
   async function fetchWorkspace() {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8080/api/workspace/current');
+      const response = await fetch('/api/workspace/current');
       if (!response.ok) {
         throw new Error('Failed to fetch workspace');
       }
@@ -29,26 +43,24 @@ export function WorkspaceOverview() {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <div className="text-center text-gray-600">Loading workspace...</div>
+      <div className="loading-state">
+        <div className="loading-message">Loading workspace...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-600">Error: {error}</p>
-        </div>
+      <div className="error-state">
+        <div className="error-message">Error: {error}</div>
       </div>
     );
   }
 
   if (!workspace) {
     return (
-      <div className="p-8">
-        <div className="text-center text-gray-600">No workspace data available</div>
+      <div className="empty-state">
+        <div className="empty-message">No workspace data available</div>
       </div>
     );
   }
@@ -56,54 +68,54 @@ export function WorkspaceOverview() {
   const stats = workspace.workspace.statistics;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="workspace-overview">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Workspace Overview</h1>
-        <p className="text-gray-600 mt-2">
+      <div className="overview-header">
+        <h1 className="overview-title">Workspace Overview</h1>
+        <p className="overview-path">
           {workspace.workspace.path}
         </p>
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Projects</div>
-          <div className="text-2xl font-bold text-gray-900">{stats.totalProjects}</div>
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Features</div>
+          <div className="stat-value">{stats.totalFeatures}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Total Tasks</div>
-          <div className="text-2xl font-bold text-gray-900">{stats.totalTasks}</div>
+        <div className="stat-card">
+          <div className="stat-label">Total Tasks</div>
+          <div className="stat-value">{stats.totalTasks}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Completed</div>
-          <div className="text-2xl font-bold text-green-600">{stats.completedTasks}</div>
+        <div className="stat-card">
+          <div className="stat-label">Completed</div>
+          <div className="stat-value stat-value-success">{stats.completedTasks}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Overall Progress</div>
-          <div className="text-2xl font-bold text-blue-600">{stats.overallProgress}%</div>
+        <div className="stat-card">
+          <div className="stat-label">Overall Progress</div>
+          <div className="stat-value stat-value-primary">{stats.overallProgress}%</div>
         </div>
       </div>
 
-      {/* Projects Grid */}
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-gray-900">
-          Projects ({workspace.projects.length})
+      {/* Features Grid */}
+      <div className="features-header">
+        <h2 className="features-title">
+          Features ({workspace.features.length})
         </h2>
       </div>
 
-      {workspace.projects.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center text-gray-600">
-          No PM-AI projects found in this workspace.
+      {workspace.features.length === 0 ? (
+        <div className="empty-card">
+          <div className="empty-message">No PM-AI features found in this workspace.</div>
           <br />
-          <Link to="/" className="text-blue-600 hover:text-blue-800 underline">
-            Create your first project
+          <Link to="/" className="link-primary">
+            Initialize your workspace first
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {workspace.projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+        <div className="features-grid">
+          {workspace.features.map((feature) => (
+            <FeatureCard key={feature.id} feature={feature} />
           ))}
         </div>
       )}
@@ -111,51 +123,45 @@ export function WorkspaceOverview() {
   );
 }
 
-function ProjectCard({ project }: { project: WorkspaceProject }) {
-  const progress = project.progress;
+function FeatureCard({ feature }: { feature: Feature }) {
+  const progress = feature.progress;
   const percentage = progress?.percentage || 0;
   const completed = progress?.completed || 0;
   const total = progress?.total || 0;
 
   return (
-    <Link to={`/project/${project.id}`} className="block">
-      <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6 h-full">
-        <div className="mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 truncate">
-            {project.name}
+    <Link to={`/feature/${feature.id}`} className="feature-card-link">
+      <div className="feature-card-overview">
+        <div className="feature-card-body">
+          <h3 className="feature-card-title">
+            {feature.name}
           </h3>
-          {project.description && (
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-              {project.description}
+          {feature.description && (
+            <p className="feature-card-description">
+              {feature.description}
             </p>
           )}
         </div>
 
-        {project.folderPath && (
-          <div className="text-xs text-gray-500 mb-3 truncate">
-            {project.folderPath}
-          </div>
-        )}
-
         {total > 0 && (
-          <div className="mb-3">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">Progress</span>
-              <span className="text-gray-900">
+          <div className="feature-progress">
+            <div className="progress-header">
+              <span className="progress-label">Progress</span>
+              <span className="progress-value">
                 {completed}/{total} ({percentage}%)
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="progress-bar">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all"
+                className="progress-bar-fill progress-bar-primary"
                 style={{ width: `${percentage}%` }}
               />
             </div>
           </div>
         )}
 
-        <div className="text-xs text-gray-500">
-          Created: {new Date(project.createdAt).toLocaleDateString()}
+        <div className="feature-card-date">
+          Created: {new Date(feature.createdAt).toLocaleDateString()}
         </div>
       </div>
     </Link>

@@ -13,14 +13,14 @@ export { runMigrations } from './db/migrate.js';
 export type { MigrationConfig } from './db/migrate.js';
 
 // Schema tables
-export { workspaces, projects, plans, tasks, taskComments } from './db/schema.js';
+export { workspaces, features, plans, tasks, taskComments } from './db/schema.js';
 
 // Domain types (inferred from Drizzle schema)
 export type {
   Workspace,
   NewWorkspace,
-  Project,
-  NewProject,
+  Feature,
+  NewFeature,
   Plan,
   NewPlan,
   Task,
@@ -40,29 +40,33 @@ export {
   scanWorkspace,
   scanCurrentWorkspace,
   getWorkspaceStatistics,
-  findProjectsInDirectory,
+  findFeaturesInDirectory,
   createWorkspace,
   getWorkspaceById,
   getWorkspaceByPath,
   getAllWorkspaces,
   updateWorkspaceDescription,
   touchWorkspace,
-  getWorkspaceProjects,
-  type WorkspaceProject,
+  getWorkspaceFeatures,
+  detectWorkspace,
+  detectWorkspaceFromPath,
+  requireWorkspace,
+  type WorkspaceFeature,
   type WorkspaceOverview,
   type PmAiConfig
 } from './services/workspaces/index.js';
 
-// Project services
+// Feature services
 export {
-  createProject,
-  createProjectWithDescription,
-  getProjectById,
-  getAllProjects,
-  updateProjectDescription,
-  touchProject,
-  getProjectsByWorkspace
-} from './services/projects/index.js';
+  createFeature,
+  createFeatureWithDescription,
+  getFeatureById,
+  getFeatureByWorkspaceAndName,
+  getAllFeatures,
+  updateFeatureDescription,
+  touchFeature,
+  getFeaturesByWorkspace
+} from './services/features/index.js';
 
 // Plan services
 export {
@@ -119,7 +123,7 @@ export {
 
 // Shared services (used across multiple domains)
 export {
-  getProjectProgress,
+  getFeatureProgress,
   getPlanProgress,
   type ProgressStats
 } from './services/shared/progressService.js';
@@ -148,12 +152,12 @@ export type {
   ProgressStats as ApiProgressStats,
   CriticalPathNode as ApiCriticalPathNode,
   DependencyGraph,
-  CreateProjectRequest,
+  CreateFeatureRequest,
   CreatePlanRequest,
   UpdateTaskRequest,
   AddCommentRequest,
-  ProjectsResponse,
-  ProjectResponse,
+  FeaturesResponse,
+  FeatureResponse,
   PlansResponse,
   PlanResponse,
   TasksResponse,

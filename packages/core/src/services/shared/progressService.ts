@@ -16,34 +16,34 @@ export type ProgressStats = {
 };
 
 /**
- * Get progress statistics for a project
+ * Get progress statistics for a feature
  */
-export async function getProjectProgress(projectId: string): Promise<ProgressStats> {
+export async function getFeatureProgress(featureId: string): Promise<ProgressStats> {
   const db = getDb();
-  // Get all tasks for the project
-  const projectTasks = await db
+  // Get all tasks for the feature
+  const featureTasks = await db
     .select({
       status: tasks.status,
       priority: tasks.priority
     })
     .from(tasks)
     .innerJoin(plans, eq(tasks.planId, plans.id))
-    .where(eq(plans.projectId, projectId));
+    .where(eq(plans.featureId, featureId));
 
-  const total = projectTasks.length;
+  const total = featureTasks.length;
 
   // Count by status
-  const planned = projectTasks.filter(t => t.status === 'planned').length;
-  const inReview = projectTasks.filter(t => t.status === 'review').length;
-  const completed = projectTasks.filter(t => t.status === 'done').length;
+  const planned = featureTasks.filter(t => t.status === 'planned').length;
+  const inReview = featureTasks.filter(t => t.status === 'review').length;
+  const completed = featureTasks.filter(t => t.status === 'done').length;
 
   // Calculate percentage
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   // Breakdown by priority
-  const highTasks = projectTasks.filter(t => t.priority === 'high');
-  const mediumTasks = projectTasks.filter(t => t.priority === 'medium');
-  const lowTasks = projectTasks.filter(t => t.priority === 'low');
+  const highTasks = featureTasks.filter(t => t.priority === 'high');
+  const mediumTasks = featureTasks.filter(t => t.priority === 'medium');
+  const lowTasks = featureTasks.filter(t => t.priority === 'low');
 
   const byPriority = {
     high: {

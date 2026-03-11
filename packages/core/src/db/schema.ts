@@ -10,18 +10,18 @@ export const workspaces = sqliteTable('workspaces', {
   updatedAt: text('updated_at').default(sql`(CURRENT_TIMESTAMP)`).notNull()
 });
 
-export const projects = sqliteTable('projects', {
+export const features = sqliteTable('features', {
   id: text('id').primaryKey(),
   workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  description: text('description'),    // AI-summarized on init
+  description: text('description'),    // Optional: AI-summarized or user-provided
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull(),
   updatedAt: text('updated_at').default(sql`(CURRENT_TIMESTAMP)`).notNull()
 });
 
 export const plans = sqliteTable('plans', {
   id: text('id').primaryKey(),
-  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  featureId: text('feature_id').notNull().references(() => features.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   markdown: text('markdown').notNull(),
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`).notNull()
@@ -48,8 +48,8 @@ export const taskComments = sqliteTable('task_comments', {
 // Domain types inferred from schema
 export type Workspace = typeof workspaces.$inferSelect;
 export type NewWorkspace = typeof workspaces.$inferInsert;
-export type Project = typeof projects.$inferSelect;
-export type NewProject = typeof projects.$inferInsert;
+export type Feature = typeof features.$inferSelect;
+export type NewFeature = typeof features.$inferInsert;
 export type Plan = typeof plans.$inferSelect;
 export type NewPlan = typeof plans.$inferInsert;
 export type Task = typeof tasks.$inferSelect;

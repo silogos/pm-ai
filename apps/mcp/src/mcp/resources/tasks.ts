@@ -1,12 +1,12 @@
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { getTasks, parseDependencies } from '@pm-ai/core';
-import { getProjectById } from '@pm-ai/core';
+import { getFeatureById } from '@pm-ai/core';
 
 export async function registerTasksResource(server: McpServer): Promise<void> {
   // Create a resource template for tasks
-  const tasksTemplate = new ResourceTemplate('pmai://tasks/{project_id}', {
+  const tasksTemplate = new ResourceTemplate('pmai://tasks/{feature_id}', {
     list: async () => {
-      // Return empty list as actual resources depend on project_id
+      // Return empty list as actual resources depend on feature_id
       return {
         resources: []
       };
@@ -18,34 +18,34 @@ export async function registerTasksResource(server: McpServer): Promise<void> {
     'tasks',
     tasksTemplate,
     {
-      description: 'Get all tasks for a specific project'
+      description: 'Get all tasks for a specific feature'
     },
     async (uri, variables, _extra) => {
       try {
-        const projectId = variables.project_id as string;
+        const featureId = variables.feature_id as string;
 
-        // Verify project exists
-        const project = await getProjectById(projectId);
-        if (!project) {
+        // Verify feature exists
+        const feature = await getFeatureById(featureId);
+        if (!feature) {
           return {
             contents: [{
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify({ error: 'Project not found' }, null, 2)
+              text: JSON.stringify({ error: 'Feature not found' }, null, 2)
             }]
           };
         }
 
-        // Get tasks for this project
-        const tasks = await getTasks(projectId);
+        // Get tasks for this feature
+        const tasks = await getTasks(featureId);
 
         return {
           contents: [{
             uri: uri.href,
             mimeType: 'application/json',
             text: JSON.stringify({
-              project_id: projectId,
-              project_name: project.name,
+              feature_id: featureId,
+              feature_name: feature.name,
               tasks: tasks.map(task => ({
                 id: task.id,
                 plan_id: task.planId,

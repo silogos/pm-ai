@@ -1,13 +1,20 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { getDb } from '../../db/client.js';
-import { workspaces, projects, type Workspace, type NewWorkspace, type Project } from '../../db/schema.js';
+import { workspaces, features, type Workspace, type NewWorkspace, type Feature } from '../../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { getAllProjects } from '../projects/index.js';
-import { getProjectProgress } from '../shared/progressService.js';
+import { getAllFeatures } from '../features/index.js';
+import { getFeatureProgress } from '../shared/progressService.js';
 
-export interface WorkspaceProject {
+// Re-export detection utilities
+export {
+  detectWorkspace,
+  detectWorkspaceFromPath,
+  requireWorkspace
+} from './detection.js';
+
+export interface WorkspaceFeature {
   id: string;
   name: string;
   description: string | null;
@@ -25,14 +32,14 @@ export interface WorkspaceProject {
 
 export interface WorkspaceOverview {
   rootPath: string;
-  totalProjects: number;
-  projects: WorkspaceProject[];
+  totalFeatures: number;
+  features: WorkspaceFeature[];
 }
 
 export interface PmAiConfig {
   version: string;
-  projectId: string;
-  projectName: string;
+  featureId: string;
+  featureName: string;
   createdAt: string;
   description?: string;
 }
@@ -42,30 +49,30 @@ export interface PmAiConfig {
  */
 export async function scanWorkspace(rootPath: string, maxDepth: number = 3): Promise<WorkspaceOverview> {
   const configFiles = await findPmAiConfigs(rootPath, 0, maxDepth);
-  const allProjects = await getAllProjects();
+  const allFeatures = await getAllFeatures();
 
-  // Map projects by ID for quick lookup
-  const projectMap = new Map(allProjects.map(p => [p.id, p]));
+  // Map features by ID for quick lookup
+  const featureMap = new Map(allFeatures.map(p => [p.id, p]));
 
-  // Build workspace projects list
-  const workspaceProjects: WorkspaceProject[] = [];
+  // Build workspace features list
+  const workspaceFeatures: WorkspaceFeature[] = [];
 
   for (const configPath of configFiles) {
     try {
       const configContent = await fs.readFile(configPath, 'utf-8');
       const config: PmAiConfig = JSON.parse(configContent);
 
-      const project = projectMap.get(config.projectId);
-      if (project) {
-        const progress = await getProjectProgress(project.id);
+      const feature = featureMap.get(config.featureId);
+      if (feature) {
+        const progress = await getFeatureProgress(feature.id);
 
-        workspaceProjects.push({
-          id: project.id,
-          name: project.name,
-          description: project.description || null,
-          createdAt: project.createdAt,
-          updatedAt: project.updatedAt || project.createdAt,
-          workspaceId: project.workspaceId,
+        workspaceFeatures.push({
+          id: feature.id,
+          name: feature.name,
+          description: feature.description || null,
+          createdAt: feature.createdAt,
+          updatedAt: feature.updatedAt || feature.createdAt,
+          workspaceId: feature.workspaceId,
           progress
         });
       }
@@ -74,18 +81,18 @@ export async function scanWorkspace(rootPath: string, maxDepth: number = 3): Pro
     }
   }
 
-  // Also include projects that might not have .pm-ai config but are in the database
-  for (const project of allProjects) {
-    if (!workspaceProjects.find(wp => wp.id === project.id)) {
-      const progress = await getProjectProgress(project.id);
+  // Also include features that might not have .pm-ai config but are in the database
+  for (const feature of allFeatures) {
+    if (!workspaceFeatures.find(wp => wp.id === feature.id)) {
+      const progress = await getFeatureProgress(feature.id);
 
-      workspaceProjects.push({
-        id: project.id,
-        name: project.name,
-        description: project.description || null,
-        createdAt: project.createdAt,
-        updatedAt: project.updatedAt || project.createdAt,
-        workspaceId: project.workspaceId,
+      workspaceFeatures.push({
+        id: feature.id,
+        name: feature.name,
+        description: feature.description || null,
+        createdAt: feature.createdAt,
+        updatedAt: feature.updatedAt || feature.createdAt,
+        workspaceId: feature.workspaceId,
         progress
       });
     }
@@ -93,8 +100,8 @@ export async function scanWorkspace(rootPath: string, maxDepth: number = 3): Pro
 
   return {
     rootPath,
-    totalProjects: workspaceProjects.length,
-    projects: workspaceProjects
+    totalFeatures: workspaceFeatures.length,
+    features: workspaceFeatures
   };
 }
 
@@ -109,7 +116,7 @@ export async function scanCurrentWorkspace(): Promise<WorkspaceOverview> {
  * Get workspace statistics
  */
 export async function getWorkspaceStatistics(rootPath: string): Promise<{
-  totalProjects: number;
+  totalFeatures: number;
   totalTasks: number;
   completedTasks: number;
   overallProgress: number;
@@ -119,17 +126,17 @@ export async function getWorkspaceStatistics(rootPath: string): Promise<{
   let totalTasks = 0;
   let completedTasks = 0;
 
-  for (const project of overview.projects) {
-    if (project.progress) {
-      totalTasks += project.progress.total;
-      completedTasks += project.progress.completed;
+  for (const feature of overview.features) {
+    if (feature.progress) {
+      totalTasks += feature.progress.total;
+      completedTasks += feature.progress.completed;
     }
   }
 
   const overallProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return {
-    totalProjects: overview.totalProjects,
+    totalFeatures: overview.totalFeatures,
     totalTasks,
     completedTasks,
     overallProgress
@@ -156,7 +163,7 @@ async function findPmAiConfigs(dirPath: string, depth: number, maxDepth: number)
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry.name);
 
-        // Skip hidden directories and common non-project directories
+        // Skip hidden directories and common non-feature directories
         if (entry.name.startsWith('.') || ['node_modules', 'dist', 'build', '.git'].includes(entry.name)) {
           continue;
         }
@@ -175,9 +182,9 @@ async function findPmAiConfigs(dirPath: string, depth: number, maxDepth: number)
 }
 
 /**
- * Find projects in a workspace (by workspace path)
+ * Find features in a workspace (by workspace path)
  */
-export async function findProjectsInDirectory(workspacePath: string): Promise<Project[]> {
+export async function findFeaturesInDirectory(workspacePath: string): Promise<Feature[]> {
   const db = getDb();
 
   const workspace = await getWorkspaceByPath(workspacePath);
@@ -185,7 +192,7 @@ export async function findProjectsInDirectory(workspacePath: string): Promise<Pr
     return [];
   }
 
-  return await db.select().from(projects).where(eq(projects.workspaceId, workspace.id));
+  return await db.select().from(features).where(eq(features.workspaceId, workspace.id));
 }
 
 // ============================================================================
@@ -252,9 +259,9 @@ export async function touchWorkspace(workspaceId: string): Promise<void> {
 }
 
 /**
- * Get all projects in a workspace
+ * Get all features in a workspace
  */
-export async function getWorkspaceProjects(workspaceId: string): Promise<Project[]> {
+export async function getWorkspaceFeatures(workspaceId: string): Promise<Feature[]> {
   const db = getDb();
-  return await db.select().from(projects).where(eq(projects.workspaceId, workspaceId));
+  return await db.select().from(features).where(eq(features.workspaceId, workspaceId));
 }

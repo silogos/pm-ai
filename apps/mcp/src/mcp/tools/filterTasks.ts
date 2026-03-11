@@ -1,11 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { filterTasks } from '@pm-ai/core';
-import { getProjectById } from '@pm-ai/core';
+import { getFeatureById } from '@pm-ai/core';
 import { parseDependencies } from '@pm-ai/core';
 
 const FilterTasksSchema = z.object({
-  project_id: z.string().describe('The ID of the project to filter tasks in'),
+  feature_id: z.string().describe('The ID of the feature to filter tasks in'),
   status: z.array(z.enum(['planned', 'review', 'done'])).optional().describe('Filter by task status (one or more)'),
   priority: z.array(z.enum(['high', 'medium', 'low'])).optional().describe('Filter by task priority (one or more)'),
   plan_id: z.string().optional().describe('Filter by specific plan ID')
@@ -18,13 +18,13 @@ export async function registerFilterTasksTool(server: McpServer): Promise<void> 
     FilterTasksSchema.shape,
     async (input) => {
       try {
-        // Verify project exists
-        const project = await getProjectById(input.project_id);
-        if (!project) {
+        // Verify feature exists
+        const feature = await getFeatureById(input.feature_id);
+        if (!feature) {
           return {
             content: [{
               type: 'text',
-              text: JSON.stringify({ error: 'Project not found' }, null, 2)
+              text: JSON.stringify({ error: 'Feature not found' }, null, 2)
             }]
           };
         }
@@ -62,14 +62,14 @@ export async function registerFilterTasksTool(server: McpServer): Promise<void> 
         }
 
         // Filter tasks
-        const tasks = await filterTasks(input.project_id, filters);
+        const tasks = await filterTasks(input.feature_id, filters);
 
         return {
           content: [{
             type: 'text',
             text: JSON.stringify({
-              project_id: input.project_id,
-              project_name: project.name,
+              feature_id: input.feature_id,
+              feature_name: feature.name,
               filters: {
                 ...filters,
                 plan_id: filters.planId

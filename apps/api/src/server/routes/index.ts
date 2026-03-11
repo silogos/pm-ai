@@ -2,10 +2,12 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import {
-  getAllProjects,
-  getProjectById,
-  createProject,
-  createProjectWithDescription,
+  getAllWorkspaces,
+  getWorkspaceById,
+  getFeaturesByWorkspace,
+  getFeatureById,
+  createFeature,
+  createFeatureWithDescription,
   getWorkspaceByPath
 } from '@pm-ai/core';
 import {
@@ -23,7 +25,6 @@ import {
 } from '@pm-ai/core';
 import {
   getTasks,
-  getTaskById,
   getTasksByPlanId,
   getTasksByStatus,
   getTasksByPriority,
@@ -34,7 +35,8 @@ import {
   updateTaskDescription,
   updateTaskFlag,
   updateTaskDependencies,
-  deleteTask
+  deleteTask,
+  getTaskById
 } from '@pm-ai/core';
 import {
   getComments,
@@ -42,7 +44,7 @@ import {
   deleteComment
 } from '@pm-ai/core';
 import {
-  getProjectProgress,
+  getFeatureProgress,
   getPlanProgress
 } from '@pm-ai/core';
 import {
@@ -54,14 +56,14 @@ import {
 const app = new Hono();
 
 // Validation schemas
-const createProjectSchema = z.object({
+const createFeatureSchema = z.object({
   name: z.string().min(1).max(255),
   workspaceId: z.string().uuid().optional(),
   description: z.string().optional()
 });
 
 const createPlanSchema = z.object({
-  projectId: z.string().uuid(),
+  featureId: z.string().uuid(),
   title: z.string().min(1).max(255),
   markdown: z.string()
 });
@@ -91,35 +93,111 @@ function handleError(err: Error, c: any) {
   }, 500);
 }
 
-// ==================== Projects ====================
+// ==================== Workspaces ====================
 
-// GET /api/projects - List all projects
-app.get('/projects', async (c) => {
+// GET /api/workspaces - List all workspaces
+app.get('/workspaces', async (c) => {
   try {
-    const projects = await getAllProjects();
-
-    // Get progress for each project
-    const projectsWithProgress = await Promise.all(
-      projects.map(async (project) => {
-        const progress = await getProjectProgress(project.id);
-        return {
-          ...project,
-          progress
-        };
-      })
-    );
-
-    return c.json({ projects: projectsWithProgress });
+    const workspaces = await getAllWorkspaces();
+    return c.json({ workspaces });
   } catch (err) {
     return handleError(err as Error, c);
   }
 });
 
-// POST /api/projects - Create a new project
-app.post('/projects', zValidator('json', createProjectSchema), async (c) => {
+// GET /api/workspaces/:id - Get workspace details
+app.get('/workspaces/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const workspace = await getWorkspaceById(id);
+
+    if (!workspace) {
+      return c.json({
+        error: {
+          message: 'Workspace not found',
+          code: 'WORKSPACE_NOT_FOUND',
+          statusCode: 404
+        }
+      }, 404);
+    }
+
+    // Get features for this workspace
+    const features = await getFeaturesByWorkspace(id);
+
+    return c.json({
+      workspace: {
+        ...workspace,
+        features
+      }
+    });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
+// ==================== Features ====================
+
+// GET /api/features - List all features (or by workspace)
+app.get('/features', async (c) => {
+  try {
+    const workspaceId = c.req.query('workspaceId');
+    if (!workspaceId) {
+      return c.json({
+        error: {
+          message: 'workspaceId query parameter is required',
+          code: 'MISSING_WORKSPACE_ID',
+          statusCode: 400
+        }
+      }, 400);
+    }
+
+    const features = await getFeaturesByWorkspace(workspaceId);
+
+    // Get progress for each feature
+    const featuresWithProgress = await Promise.all(
+      features.map(async (feature) => {
+        const progress = await getFeatureProgress(feature.id);
+        return {
+          ...feature,
+          progress
+        };
+      })
+    );
+
+    return c.json({ features: featuresWithProgress });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
+// GET /api/workspaces/:id/features - Get features in a workspace
+app.get('/workspaces/:id/features', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const features = await getFeaturesByWorkspace(id);
+
+    // Get progress for each feature
+    const featuresWithProgress = await Promise.all(
+      features.map(async (feature) => {
+        const progress = await getFeatureProgress(feature.id);
+        return {
+          ...feature,
+          progress
+        };
+      })
+    );
+
+    return c.json({ features: featuresWithProgress });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
+// POST /api/features - Create a new feature
+app.post('/features', zValidator('json', createFeatureSchema), async (c) => {
   try {
     const { name, workspaceId, description } = c.req.valid('json');
-    let projectId: string;
+    let featureId: string;
 
     // If no workspaceId provided, try to find workspace by current directory
     let finalWorkspaceId = workspaceId;
@@ -140,52 +218,52 @@ app.post('/projects', zValidator('json', createProjectSchema), async (c) => {
     }
 
     if (description) {
-      projectId = await createProjectWithDescription(name, finalWorkspaceId, description);
+      featureId = await createFeatureWithDescription(name, finalWorkspaceId, description);
     } else {
-      projectId = await createProject(name, finalWorkspaceId);
+      featureId = await createFeature(name, finalWorkspaceId);
     }
 
-    const project = await getProjectById(projectId);
+    const feature = await getFeatureById(featureId);
 
-    if (!project) {
+    if (!feature) {
       return c.json({
         error: {
-          message: 'Failed to create project',
+          message: 'Failed to create feature',
           code: 'CREATE_FAILED',
           statusCode: 500
         }
       }, 500);
     }
 
-    return c.json({ project }, 201);
+    return c.json({ feature }, 201);
   } catch (err) {
     return handleError(err as Error, c);
   }
 });
 
-// GET /api/projects/:id - Get project details
-app.get('/projects/:id', async (c) => {
+// GET /api/features/:id - Get feature details
+app.get('/features/:id', async (c) => {
   try {
     const id = c.req.param('id');
-    const project = await getProjectById(id);
+    const feature = await getFeatureById(id);
 
-    if (!project) {
+    if (!feature) {
       return c.json({
         error: {
-          message: 'Project not found',
-          code: 'PROJECT_NOT_FOUND',
+          message: 'Feature not found',
+          code: 'FEATURE_NOT_FOUND',
           statusCode: 404
         }
       }, 404);
     }
 
-    const progress = await getProjectProgress(id);
+    const progress = await getFeatureProgress(id);
     const plans = await getPlans(id);
     const tasks = await getTasks(id);
 
     return c.json({
-      project: {
-        ...project,
+      feature: {
+        ...feature,
         progress,
         plans,
         tasks: tasks.map(task => ({
@@ -199,8 +277,8 @@ app.get('/projects/:id', async (c) => {
   }
 });
 
-// GET /api/projects/:id/plans - Get project plans
-app.get('/projects/:id/plans', async (c) => {
+// GET /api/features/:id/plans - Get feature plans
+app.get('/features/:id/plans', async (c) => {
   try {
     const id = c.req.param('id');
     const plans = await getPlans(id);
@@ -222,8 +300,8 @@ app.get('/projects/:id/plans', async (c) => {
   }
 });
 
-// GET /api/projects/:id/tasks - Get project tasks
-app.get('/projects/:id/tasks', async (c) => {
+// GET /api/features/:id/tasks - Get feature tasks
+app.get('/features/:id/tasks', async (c) => {
   try {
     const id = c.req.param('id');
     const status = c.req.query('status');
@@ -252,19 +330,19 @@ app.get('/projects/:id/tasks', async (c) => {
   }
 });
 
-// GET /api/projects/:id/progress - Get project progress
-app.get('/projects/:id/progress', async (c) => {
+// GET /api/features/:id/progress - Get feature progress
+app.get('/features/:id/progress', async (c) => {
   try {
     const id = c.req.param('id');
-    const progress = await getProjectProgress(id);
+    const progress = await getFeatureProgress(id);
     return c.json({ progress });
   } catch (err) {
     return handleError(err as Error, c);
   }
 });
 
-// GET /api/projects/:id/critical-path - Get critical path
-app.get('/projects/:id/critical-path', async (c) => {
+// GET /api/features/:id/critical-path - Get critical path
+app.get('/features/:id/critical-path', async (c) => {
   try {
     const id = c.req.param('id');
     const criticalPath = await getCriticalPath(id);
@@ -279,8 +357,8 @@ app.get('/projects/:id/critical-path', async (c) => {
 // POST /api/plans - Create a new plan
 app.post('/plans', zValidator('json', createPlanSchema), async (c) => {
   try {
-    const { projectId, title, markdown } = c.req.valid('json');
-    const planId = await savePlan(projectId, title, markdown);
+    const { featureId, title, markdown } = c.req.valid('json');
+    const planId = await savePlan(featureId, title, markdown);
     const plan = await getPlanById(planId);
 
     if (!plan) {
@@ -328,6 +406,34 @@ app.get('/plans/:id', async (c) => {
         }))
       }
     });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
+// GET /api/plans/:id/tasks - Get plan tasks
+app.get('/plans/:id/tasks', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const tasks = await getTasksByPlanId(id);
+
+    return c.json({
+      tasks: tasks.map(task => ({
+        ...task,
+        dependencies: parseDependencies(task.dependencies)
+      }))
+    });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
+// GET /api/plans/:id/critical-path - Get critical path
+app.get('/plans/:id/critical-path', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const criticalPath = await getCriticalPath(id);
+    return c.json({ critical_path: criticalPath });
   } catch (err) {
     return handleError(err as Error, c);
   }
@@ -483,10 +589,10 @@ app.get('/workspace', async (c) => {
     return c.json({
       workspace: {
         path: overview.rootPath,
-        total_projects: overview.totalProjects,
+        total_features: overview.totalFeatures,
         statistics: stats
       },
-      projects: overview.projects
+      features: overview.features
     });
   } catch (err) {
     return handleError(err as Error, c);
@@ -502,38 +608,38 @@ app.get('/workspace/current', async (c) => {
     return c.json({
       workspace: {
         path: overview.rootPath,
-        total_projects: overview.totalProjects,
+        total_features: overview.totalFeatures,
         statistics: stats
       },
-      projects: overview.projects
+      features: overview.features
     });
   } catch (err) {
     return handleError(err as Error, c);
   }
 });
 
-// POST /api/projects/sync - Sync plans from markdown files
-app.post('/projects/sync', async (c) => {
+// POST /api/features/sync - Sync plans from markdown files
+app.post('/features/sync', async (c) => {
   try {
     const body = await c.req.json();
-    const { projectId, folderPath } = body;
+    const { featureId, folderPath } = body;
 
-    if (!projectId) {
+    if (!featureId) {
       return c.json({
         error: {
-          message: 'projectId is required',
-          code: 'MISSING_PROJECT_ID',
+          message: 'featureId is required',
+          code: 'MISSING_FEATURE_ID',
           statusCode: 400
         }
       }, 400);
     }
 
     const syncPath = folderPath || process.cwd();
-    const result = await importPlansFromFolder(projectId, syncPath);
+    const result = await importPlansFromFolder(featureId, syncPath);
 
     return c.json({
       success: true,
-      project_id: projectId,
+      feature_id: featureId,
       folder_path: syncPath,
       result
     });

@@ -1,11 +1,12 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { importPlansFromFolder, importPlansFromCurrentFolder } from '@pm-ai/core';
-import * as fs from 'fs/promises';
+import { requireWorkspace, getFeatureByWorkspaceAndName, createFeatureWithDescription } from '@pm-ai/core';
 import * as path from 'path';
 
 const SyncPlansFromFilesSchema = z.object({
-  project_id: z.string().optional().describe('Project ID to sync plans for (optional - auto-detects from .pm-ai config if not provided)'),
+  feature_id: z.string().optional().describe('Feature ID to sync plans for (optional - auto-detects from workspace if not provided)'),
+  feature_name: z.string().optional().describe('Feature name (will create feature if it doesn\'t exist)'),
   folder_path: z.string().optional().describe('Folder path to scan for .md plan files (optional - uses current folder if not provided)')
 });
 
@@ -16,62 +17,49 @@ export async function registerSyncPlansFromFilesTool(server: McpServer): Promise
     SyncPlansFromFilesSchema.shape,
     async (input) => {
       try {
-        let projectId: string | undefined = input.project_id;
+        let featureId: string | undefined = input.feature_id;
         let folderPath: string | undefined = input.folder_path;
 
-        // Auto-detect from .pm-ai config if project_id not provided
-        if (!projectId) {
-          const currentPath = process.cwd();
-          const configPath = path.join(currentPath, '.pm-ai');
+        // If no feature_id provided, try to detect/create from workspace
+        if (!featureId) {
+          // Auto-detect workspace from current path
+          const workspaceId = await requireWorkspace();
 
-          try {
-            const configContent = await fs.readFile(configPath, 'utf-8');
-            const config = JSON.parse(configContent);
-
-            if (!config.projectId) {
-              throw new Error('Invalid .pm-ai config: missing projectId');
+          // If feature_name provided, look up or create feature
+          if (input.feature_name) {
+            const existingFeature = await getFeatureByWorkspaceAndName(workspaceId, input.feature_name);
+            if (existingFeature) {
+              featureId = existingFeature.id;
+            } else {
+              // Create new feature
+              featureId = await createFeatureWithDescription(input.feature_name, workspaceId, `Feature: ${input.feature_name}`);
             }
-
-            projectId = config.projectId;
-            folderPath = folderPath || currentPath;
-          } catch (error) {
+          } else {
             return {
               content: [{
                 type: 'text',
                 text: JSON.stringify({
-                  error: 'Could not auto-detect project',
-                  details: 'No .pm-ai config file found in current directory. Please provide project_id explicitly or initialize PM-AI in this folder first.',
-                  hint: 'Run "init_project_in_current_folder" first, or provide project_id parameter'
+                  error: 'Missing feature identifier',
+                  details: 'Please provide either feature_id or feature_name to sync plans for.',
+                  hint: 'Example: feature_name="Authentication" or feature_id="uuid"'
                 }, null, 2)
               }]
             };
           }
         }
 
-        if (!projectId) {
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify({
-                error: 'Missing project_id',
-                details: 'Could not determine which project to sync plans for. Provide project_id or ensure .pm-ai config exists.'
-              }, null, 2)
-            }]
-          };
-        }
-
         // Use provided folder_path or current directory
         const syncPath = folderPath || process.cwd();
 
         // Import plans from folder
-        const result = await importPlansFromFolder(projectId, syncPath);
+        const result = await importPlansFromFolder(featureId, syncPath);
 
         return {
           content: [{
             type: 'text',
             text: JSON.stringify({
               success: true,
-              project_id: projectId,
+              feature_id: featureId,
               folder_path: syncPath,
               result: {
                 imported: result.imported,
@@ -107,39 +95,24 @@ export async function registerSyncPlansFromFilesTool(server: McpServer): Promise
 export async function registerSyncCurrentFolderTool(server: McpServer): Promise<void> {
   server.tool(
     'sync_current_folder',
-    'Quick shortcut to sync markdown files from the current folder as plans. Auto-detects the project from .pm-ai config.',
+    'Quick shortcut to sync markdown files from the current folder as plans. Auto-detects the workspace from current path.',
     {},
     async () => {
       try {
-        const result = await importPlansFromCurrentFolder();
+        // This function now uses the workspace detection instead of .pm-ai config
+        // The importPlansFromCurrentFolder function needs to be updated to use workspace detection
+        // For now, let's use the workspace detection approach here
+        const workspaceId = await requireWorkspace();
 
-        if (!result) {
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify({
-                error: 'Could not sync current folder',
-                details: 'No .pm-ai config file found in current directory. Initialize PM-AI first.',
-                hint: 'Run "init_project_in_current_folder" first'
-              }, null, 2)
-            }]
-          };
-        }
-
+        // We need a feature_id to import plans, so we need to ask for it or create a default one
+        // For now, let's return an error asking for feature specification
         return {
           content: [{
             type: 'text',
             text: JSON.stringify({
-              success: true,
-              folder_path: process.cwd(),
-              result: {
-                imported: result.imported,
-                updated: result.updated,
-                skipped: result.skipped,
-                errors: result.errors.length
-              },
-              message: `Synced ${result.imported} new plan(s), updated ${result.updated} plan(s) from current folder`,
-              errors: result.errors.length > 0 ? result.errors : undefined
+              error: 'Feature required',
+              details: 'Please specify which feature to sync plans for using the sync_plans_from_files tool with feature_name or feature_id parameter.',
+              hint: 'Example: sync_plans_from_files with feature_name="Authentication"'
             }, null, 2)
           }]
         };

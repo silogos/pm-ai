@@ -87,6 +87,11 @@ export async function init(config: DatabaseConfig = {}): Promise<ReturnType<type
   libsqlClient = createClient({ url: connectionString });
   await libsqlClient.execute('PRAGMA foreign_keys = ON');
 
+  // Enable WAL mode for better concurrent access (multi-agent scenarios)
+  await libsqlClient.execute('PRAGMA journal_mode=WAL');
+  await libsqlClient.execute('PRAGMA synchronous=NORMAL');
+  await libsqlClient.execute('PRAGMA busy_timeout=5000');
+
   dbInstance = drizzle({ client: libsqlClient, schema });
 
   // Run migrations if not skipped

@@ -42,15 +42,15 @@ export type CircularDependency = {
 };
 
 /**
- * Build a dependency graph for all tasks in a project
+ * Build a dependency graph for all tasks in a feature
  */
-export async function buildDependencyGraph(projectId: string): Promise<{
+export async function buildDependencyGraph(featureId: string): Promise<{
   graph: Map<string, string[]>;
   nodes: TaskGraphNode[];
 }> {
   const db = getDb();
-  // Get all tasks for the project
-  const projectTasks = await db
+  // Get all tasks for the feature
+  const featureTasks = await db
     .select({
       id: tasks.id,
       title: tasks.title,
@@ -60,10 +60,10 @@ export async function buildDependencyGraph(projectId: string): Promise<{
     })
     .from(tasks)
     .innerJoin(plans, eq(tasks.planId, plans.id))
-    .where(eq(plans.projectId, projectId));
+    .where(eq(plans.featureId, featureId));
 
   // Build graph nodes
-  const nodes: TaskGraphNode[] = projectTasks.map(task => ({
+  const nodes: TaskGraphNode[] = featureTasks.map(task => ({
     id: task.id,
     title: task.title,
     status: task.status,

@@ -12,7 +12,7 @@ export type TaskFilters = {
 /**
  * Search tasks by keyword in title or description
  */
-export async function searchTasks(projectId: string, query: string): Promise<TaskWithPlan[]> {
+export async function searchTasks(featureId: string, query: string): Promise<TaskWithPlan[]> {
   const db = getDb();
   if (!query || query.trim() === '') {
     return [];
@@ -36,7 +36,7 @@ export async function searchTasks(projectId: string, query: string): Promise<Tas
     .innerJoin(plans, eq(tasks.planId, plans.id))
     .where(
       and(
-        eq(plans.projectId, projectId),
+        eq(plans.featureId, featureId),
         or(
           like(tasks.title, searchPattern),
           like(tasks.description, searchPattern)
@@ -60,12 +60,12 @@ export async function searchTasks(projectId: string, query: string): Promise<Tas
 /**
  * Filter tasks by multiple criteria
  */
-export async function filterTasks(projectId: string, filters: TaskFilters): Promise<TaskWithPlan[]> {
+export async function filterTasks(featureId: string, filters: TaskFilters): Promise<TaskWithPlan[]> {
   const db = getDb();
   const conditions = [];
 
-  // Always filter by project
-  conditions.push(eq(plans.projectId, projectId));
+  // Always filter by feature
+  conditions.push(eq(plans.featureId, featureId));
 
   // Filter by status
   if (filters.status && filters.status.length > 0) {
@@ -118,20 +118,20 @@ export async function filterTasks(projectId: string, filters: TaskFilters): Prom
  * Search and filter combined
  */
 export async function searchAndFilterTasks(
-  projectId: string,
+  featureId: string,
   query: string,
   filters: TaskFilters
 ): Promise<TaskWithPlan[]> {
   const db = getDb();
   if (!query || query.trim() === '') {
-    return filterTasks(projectId, filters);
+    return filterTasks(featureId, filters);
   }
 
   const searchPattern = `%${query}%`;
   const conditions = [];
 
-  // Always filter by project
-  conditions.push(eq(plans.projectId, projectId));
+  // Always filter by feature
+  conditions.push(eq(plans.featureId, featureId));
 
   // Add search condition
   conditions.push(
@@ -191,7 +191,7 @@ export async function searchAndFilterTasks(
 /**
  * Get tasks by flag
  */
-export async function getTasksByFlag(projectId: string, flag: string): Promise<TaskWithPlan[]> {
+export async function getTasksByFlag(featureId: string, flag: string): Promise<TaskWithPlan[]> {
   const db = getDb();
   const result = await db
     .select({
@@ -209,7 +209,7 @@ export async function getTasksByFlag(projectId: string, flag: string): Promise<T
     .innerJoin(plans, eq(tasks.planId, plans.id))
     .where(
       and(
-        eq(plans.projectId, projectId),
+        eq(plans.featureId, featureId),
         eq(tasks.flag, flag)
       )
     );

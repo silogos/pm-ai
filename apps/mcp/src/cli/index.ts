@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-import { createProject, createWorkspace, getWorkspaceByPath } from '@pm-ai/core';
+import { createFeature, createWorkspace, getWorkspaceByPath } from '@pm-ai/core';
 import { getTasks, parseDependencies } from '@pm-ai/core';
 import { updateTaskStatus } from '@pm-ai/core';
-import { getProjectProgress } from '@pm-ai/core';
+import { getFeatureProgress } from '@pm-ai/core';
 
 const commands = {
-  'create-project': async (args: string[]) => {
+  'create-feature': async (args: string[]) => {
     const name = args[0];
     if (!name) {
-      console.error('Usage: pm-ai create-project <project-name> [workspace-id]');
+      console.error('Usage: pm-ai create-feature <feature-name> [workspace-id]');
       process.exit(1);
     }
 
@@ -34,27 +34,27 @@ const commands = {
         }
       }
 
-      const projectId = await createProject(name, finalWorkspaceId);
-      console.log(`Project created successfully!`);
-      console.log(`Project ID: ${projectId}`);
-      console.log(`Project Name: ${name}`);
+      const featureId = await createFeature(name, finalWorkspaceId);
+      console.log(`Feature created successfully!`);
+      console.log(`Feature ID: ${featureId}`);
+      console.log(`Feature Name: ${name}`);
       console.log(`Workspace ID: ${finalWorkspaceId}`);
     } catch (error) {
-      console.error('Failed to create project:', error);
+      console.error('Failed to create feature:', error);
       process.exit(1);
     }
   },
 
   'list-tasks': async (args: string[]) => {
-    const projectId = args[0];
-    if (!projectId) {
-      console.error('Usage: pm-ai list-tasks <project-id>');
+    const featureId = args[0];
+    if (!featureId) {
+      console.error('Usage: pm-ai list-tasks <feature-id>');
       process.exit(1);
     }
 
     try {
-      const tasks = await getTasks(projectId);
-      console.log(`\nTasks for project ${projectId}:\n`);
+      const tasks = await getTasks(featureId);
+      console.log(`\nTasks for feature ${featureId}:\n`);
 
       if (tasks.length === 0) {
         console.log('No tasks found.');
@@ -113,15 +113,15 @@ const commands = {
   },
 
   'progress': async (args: string[]) => {
-    const projectId = args[0];
-    if (!projectId) {
-      console.error('Usage: pm-ai progress <project-id>');
+    const featureId = args[0];
+    if (!featureId) {
+      console.error('Usage: pm-ai progress <feature-id>');
       process.exit(1);
     }
 
     try {
-      const progress = await getProjectProgress(projectId);
-      console.log(`\nProgress for project ${projectId}:\n`);
+      const progress = await getFeatureProgress(featureId);
+      console.log(`\nProgress for feature ${featureId}:\n`);
       console.log(`Total Tasks: ${progress.total}`);
       console.log(`Planned: ${progress.planned} (${Math.round((progress.planned / progress.total) * 100)}%)`);
       console.log(`In Review: ${progress.inReview} (${Math.round((progress.inReview / progress.total) * 100)}%)`);
@@ -217,17 +217,17 @@ const commands = {
 PM-AI CLI - Project Management AI
 
 Commands:
-  create-project <name>       Create a new project
-  list-tasks <project-id>     List all tasks for a project
+  create-feature <name>       Create a new feature
+  list-tasks <feature-id>     List all tasks for a feature
   update-status <task-id>     Update task status (planned|review|done)
-  progress <project-id>       Show project progress statistics
+  progress <feature-id>       Show feature progress statistics
   config:set <key> <value>    Set configuration value
   config:get [key]            Get configuration value(s)
   config:edit                 Edit config file in default editor
   help                        Show this help message
 
 Examples:
-  pm-ai create-project "My Project"
+  pm-ai create-feature "My Feature"
   pm-ai list-tasks abc123-def456-ghi789
   pm-ai update-status task-id-here done
   pm-ai progress abc123-def456-ghi789

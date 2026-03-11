@@ -6,7 +6,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { init } from '@pm-ai/core';
 import { registerInitProjectTool } from './mcp/tools/initProject.js';
-import { registerInitProjectInCurrentFolderTool } from './mcp/tools/initProjectInCurrentFolder.js';
+import { registerInitWorkspaceInCurrentFolderTool } from './mcp/tools/initWorkspaceInCurrentFolder.js';
+import { registerCreateFeatureTool } from './mcp/tools/createFeature.js';
 import { registerSavePlanTool } from './mcp/tools/savePlan.js';
 import { registerUpdateTaskTool } from './mcp/tools/updateTask.js';
 import { registerDeleteTaskTool } from './mcp/tools/deleteTask.js';
@@ -24,6 +25,7 @@ import { registerOpenDashboardTool } from './mcp/tools/openDashboard.js';
 import { registerScanWorkspaceTool, registerScanCurrentWorkspaceTool } from './mcp/tools/scanWorkspace.js';
 import { registerSyncPlansFromFilesTool, registerSyncCurrentFolderTool } from './mcp/tools/syncPlansFromFiles.js';
 import { getConfig } from './config/index.js';
+import { HttpServerManagerImpl } from './server/HttpServerManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,46 +35,15 @@ async function main() {
 
   const config = getConfig();
 
-  // Spawn API server as child process
-  // The API server will auto-start when executed via spawn()
+  // Initialize HTTP Server Manager (lazy spawn - only when dashboard is opened)
   const apiServerPath = join(__dirname, '../../api/dist/server/index.js');
-  let apiServerProcess: ReturnType<typeof spawn> | null = null;
+  const httpServerManager = new HttpServerManagerImpl({
+    apiServerPath,
+    preferredPort: config.apiUrl ? parseInt(config.apiUrl.split(':')[2]) : undefined,
+    dbPath: config.dbPath
+  });
 
-  try {
-    console.error('🚀 Starting API server...');
-    apiServerProcess = spawn('node', [apiServerPath], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, PORT: config.apiUrl?.split(':')[2] || '8080' }
-    });
-
-    // Log API server output
-    apiServerProcess.stdout?.on('data', (data) => {
-      console.error(`[API Server] ${data.toString().trim()}`);
-    });
-    apiServerProcess.stderr?.on('data', (data) => {
-      console.error(`[API Server Error] ${data.toString().trim()}`);
-    });
-
-    // Handle API server crash
-    apiServerProcess.on('error', (error) => {
-      console.error('❌ Failed to start API server:', error.message);
-      console.error('⚠️  Please run "pnpm dev:api" manually');
-    });
-
-    apiServerProcess.on('exit', (code) => {
-      if (code !== 0 && code !== null) {
-        console.error(`API server exited with code ${code}`);
-      }
-    });
-
-    // Wait a bit for API server to start
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    console.error(`✅ API server started at ${config.apiUrl}`);
-
-  } catch (error) {
-    console.error('⚠️  Could not auto-start API server:', error);
-    console.error('⚠️  Please run "pnpm dev:api" manually in another terminal');
-  }
+  console.error('ℹ️  HTTP server will spawn on-demand when dashboard is opened');
 
   // Check if CLAUDE.md exists and has PM-AI section
   const claudeMdPath = process.cwd() + '/CLAUDE.md';
@@ -100,16 +71,15 @@ async function main() {
     version: '1.0.0'
   });
 
-  // Use the API server URL for the dashboard
-  const apiServerUrl = config.apiUrl || 'http://localhost:3000';
-  (global as any).apiServerUrl = apiServerUrl;
-
   // Register MCP tools
   await registerInitProjectTool(server);
   console.error('Tool registered: init_project');
 
-  await registerInitProjectInCurrentFolderTool(server);
-  console.error('Tool registered: init_project_in_current_folder');
+  await registerInitWorkspaceInCurrentFolderTool(server);
+  console.error('Tool registered: init_workspace_in_current_folder');
+
+  await registerCreateFeatureTool(server);
+  console.error('Tool registered: create_feature');
 
   await registerScanWorkspaceTool(server);
   console.error('Tool registered: scan_workspace');
@@ -150,7 +120,7 @@ async function main() {
   await registerGetCriticalPathTool(server);
   console.error('Tool registered: get_critical_path');
 
-  await registerOpenDashboardTool(server);
+  await registerOpenDashboardTool(server, httpServerManager);
   console.error('Tool registered: open_dashboard');
 
   // Register MCP prompts
@@ -173,14 +143,11 @@ async function main() {
 
   console.error('PM-AI MCP Server running and ready');
   console.error('Waiting for MCP client connections...');
-  console.error(`API server URL: ${apiServerUrl}`);
 
   // Handle graceful shutdown
   const shutdown = async () => {
     console.error('Shutting down...');
-    if (apiServerProcess) {
-      apiServerProcess.kill();
-    }
+    await httpServerManager.kill();
     process.exit(0);
   };
 
