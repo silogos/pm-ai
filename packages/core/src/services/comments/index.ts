@@ -1,5 +1,5 @@
-import { getDb } from '../db/client.js';
-import { taskComments, type TaskComment } from '../db/schema.js';
+import { getDb } from '../../db/client.js';
+import { taskComments, type TaskComment } from '../../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 

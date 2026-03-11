@@ -1,5 +1,5 @@
-import { getDb } from '../db/client.js';
-import { tasks, plans, type Task, type TaskStatus, type Priority } from '../db/schema.js';
+import { getDb } from '../../db/client.js';
+import { tasks, plans, type Task, type TaskStatus, type Priority } from '../../db/schema.js';
 import { eq, and, like, or } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 

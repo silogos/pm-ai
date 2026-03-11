@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { getDb } from '../db/client.js';
-import { plans, type Plan } from '../db/schema.js';
+import { getDb } from '../../db/client.js';
+import { plans, type Plan } from '../../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 

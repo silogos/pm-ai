@@ -1,11 +1,11 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { getDb } from '../db/client.js';
-import { workspaces, projects, type Workspace, type NewWorkspace, type Project } from '../db/schema.js';
+import { getDb } from '../../db/client.js';
+import { workspaces, projects, type Workspace, type NewWorkspace, type Project } from '../../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { getAllProjects } from './projectService.js';
-import { getProjectProgress } from './progressService.js';
+import { getAllProjects } from '../projects/index.js';
+import { getProjectProgress } from '../shared/progressService.js';
 
 export interface WorkspaceProject {
   id: string;

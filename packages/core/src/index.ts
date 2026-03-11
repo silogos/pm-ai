@@ -29,8 +29,53 @@ export type {
 } from './db/schema.js';
 
 // ============================================================================
-// Domain Services
+// Services
 // ============================================================================
+
+// Workspace services
+export {
+  scanWorkspace,
+  scanCurrentWorkspace,
+  getWorkspaceStatistics,
+  findProjectsInDirectory,
+  createWorkspace,
+  getWorkspaceById,
+  getWorkspaceByPath,
+  getAllWorkspaces,
+  updateWorkspaceDescription,
+  touchWorkspace,
+  getWorkspaceProjects,
+  type WorkspaceProject,
+  type WorkspaceOverview,
+  type PmAiConfig
+} from './services/workspaces/index.js';
+
+// Project services
+export {
+  createProject,
+  createProjectWithDescription,
+  getProjectById,
+  getAllProjects,
+  updateProjectDescription,
+  touchProject,
+  getProjectsByWorkspace
+} from './services/projects/index.js';
+
+// Plan services
+export {
+  savePlan,
+  getPlans,
+  getPlanById
+} from './services/plans/index.js';
+
+export {
+  parseMarkdownPlan,
+  syncPlanFile,
+  importPlansFromFolder,
+  importPlansFromCurrentFolder,
+  type MarkdownPlan,
+  type SyncResult
+} from './services/plans/planSyncService.js';
 
 // Task services
 export {
@@ -50,7 +95,7 @@ export {
   parseDependencies,
   type TaskInput,
   type TaskWithPlan
-} from './domain/taskService.js';
+} from './services/tasks/taskService.js';
 
 export {
   searchTasks,
@@ -58,41 +103,7 @@ export {
   searchAndFilterTasks,
   getTasksByFlag,
   type TaskFilters
-} from './domain/taskQueryService.js';
-
-// Project services
-export {
-  createProject,
-  createProjectWithDescription,
-  getProjectById,
-  getAllProjects,
-  updateProjectDescription,
-  touchProject,
-  getProjectsByWorkspace
-} from './domain/projectService.js';
-
-// Plan services
-export {
-  savePlan,
-  getPlans,
-  getPlanById
-} from './domain/planService.js';
-
-export {
-  parseMarkdownPlan,
-  syncPlanFile,
-  importPlansFromFolder,
-  importPlansFromCurrentFolder,
-  type MarkdownPlan,
-  type SyncResult
-} from './domain/planSyncService.js';
-
-// Progress services
-export {
-  getProjectProgress,
-  getPlanProgress,
-  type ProgressStats
-} from './domain/progressService.js';
+} from './services/tasks/taskQueryService.js';
 
 // Comment services
 export {
@@ -101,9 +112,15 @@ export {
   getCommentById,
   deleteComment,
   type NewCommentInput
-} from './domain/commentService.js';
+} from './services/comments/index.js';
 
-// Dependency graph services
+// Shared services (used across multiple domains)
+export {
+  getProjectProgress,
+  getPlanProgress,
+  type ProgressStats
+} from './services/shared/progressService.js';
+
 export {
   buildDependencyGraph,
   getTaskDependencies,
@@ -117,25 +134,7 @@ export {
   type DependencyTree,
   type CriticalPathNode,
   type CircularDependency
-} from './domain/dependencyGraphService.js';
-
-// Workspace services
-export {
-  scanWorkspace,
-  scanCurrentWorkspace,
-  getWorkspaceStatistics,
-  findProjectsInDirectory,
-  createWorkspace,
-  getWorkspaceById,
-  getWorkspaceByPath,
-  getAllWorkspaces,
-  updateWorkspaceDescription,
-  touchWorkspace,
-  getWorkspaceProjects,
-  type WorkspaceProject,
-  type WorkspaceOverview,
-  type PmAiConfig
-} from './domain/workspaceService.js';
+} from './services/shared/dependencyGraphService.js';
 
 // ============================================================================
 // Types

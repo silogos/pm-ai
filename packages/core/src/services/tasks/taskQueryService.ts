@@ -1,7 +1,7 @@
-import { getDb } from '../db/client.js';
-import { tasks, plans, type TaskStatus, type Priority } from '../db/schema.js';
+import { getDb } from '../../db/client.js';
+import { tasks, plans, type TaskStatus, type Priority } from '../../db/schema.js';
 import { eq, and, or, like, inArray } from 'drizzle-orm';
-import type { TaskWithPlan } from './taskService.js';
+import type { TaskWithPlan } from '../tasks/taskService.js';
 
 export type TaskFilters = {
   status?: TaskStatus[];

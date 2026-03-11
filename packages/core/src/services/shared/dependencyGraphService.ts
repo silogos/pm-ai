@@ -1,5 +1,5 @@
-import { getDb } from '../db/client.js';
-import { tasks, plans, type TaskStatus, type Priority } from '../db/schema.js';
+import { getDb } from '../../db/client.js';
+import { tasks, plans, type TaskStatus, type Priority } from '../../db/schema.js';
 import { eq } from 'drizzle-orm';
 import {
   buildGraph,
@@ -11,7 +11,7 @@ import {
   findSinkNodes,
   type GraphNode
 } from '@pm-ai/utils';
-import { parseDependencies } from './taskService.js';
+import { parseDependencies } from '../tasks/taskService.js';
 
 export type TaskGraphNode = {
   id: string;
