@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs';
 import { homedir } from 'os';
+import { DEFAULT_DB_PATH } from '../config/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 let __dirname = path.dirname(__filename);
@@ -22,9 +23,6 @@ if (__dirname.endsWith('/src/db') || __dirname.endsWith('\\src/db') ||
   __dirname = path.dirname(__dirname);
 }
 
-// Default database path is in the user's config directory
-const defaultDbPath = path.join(homedir(), ".config", "pm-ai", "pm-ai.db");
-
 /**
  * Get connection string from config
  * Handles path normalization, ~ expansion, and relative-to-absolute conversion
@@ -32,7 +30,7 @@ const defaultDbPath = path.join(homedir(), ".config", "pm-ai", "pm-ai.db");
 function getConnection(config: DatabaseConfig): string {
   let dbPath = config.inMemory
     ? ':memory:'
-    : config.path || defaultDbPath;
+    : config.path || DEFAULT_DB_PATH;
 
   // Expand ~ to home directory
   if (dbPath.startsWith('~')) {
@@ -69,8 +67,20 @@ export async function init(config: DatabaseConfig = {}): Promise<ReturnType<type
   // Ensure the directory exists
   if (dbPath !== ':memory:') {
     const dbDir = path.dirname(dbPath);
+
+    // create directory if not exists
     if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
+      fs.mkdirSync(dbDir, {
+        recursive: true,
+        mode: 0o775
+      });
+    }
+
+    // try to fix directory permissions (ignore errors)
+    try {
+      fs.chmodSync(dbDir, 0o775);
+    } catch {
+      // Ignore - directory might have restricted permissions
     }
   }
 

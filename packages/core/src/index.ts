@@ -2,6 +2,9 @@
 // Database
 // ============================================================================
 
+// Database configuration (single source of truth)
+export { DEFAULT_DB_PATH } from './config/database.js';
+
 // Database client
 export { init, getDb, closeDatabase } from './db/client.js';
 

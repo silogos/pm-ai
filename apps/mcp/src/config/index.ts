@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { homedir } from 'os';
 import { mkdirSync, readFileSync, existsSync } from 'fs';
+import { DEFAULT_DB_PATH } from '@pm-ai/core';
 
 export interface Config {
   dbPath: string;
@@ -8,7 +9,6 @@ export interface Config {
 }
 
 const GLOBAL_CONFIG_PATH = join(homedir(), '.config', 'pm-ai', 'config.json');
-const DEFAULT_DB_PATH = join(homedir(), '.config', 'pm-ai', 'pmai.db');
 
 function loadGlobalConfig(): Partial<Config> {
   try {

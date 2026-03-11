@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { init, runMigrations } from '@pm-ai/core';
+import { init } from '@pm-ai/core';
 import { registerInitProjectTool } from './mcp/tools/initProject.js';
 import { registerInitProjectInCurrentFolderTool } from './mcp/tools/initProjectInCurrentFolder.js';
 import { registerSavePlanTool } from './mcp/tools/savePlan.js';
@@ -33,7 +33,8 @@ async function main() {
 
   const config = getConfig();
 
-  // Start API server automatically
+  // Spawn API server as child process
+  // The API server will auto-start when executed via spawn()
   const apiServerPath = join(__dirname, '../../api/dist/server/index.js');
   let apiServerProcess: ReturnType<typeof spawn> | null = null;
 
@@ -92,10 +93,7 @@ async function main() {
     console.error('⚠️  Starting server anyway, but AI may not understand PM-AI workflow.');
   }
 
-  // Run migrations first to ensure schema is up to date
-  await runMigrations({ dbPath: config.dbPath });
-
-  // Initialize database
+  // Initialize database (migrations are handled automatically by init)
   await init({ path: config.dbPath });
   const server = new McpServer({
     name: 'pm-ai-server',

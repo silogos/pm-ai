@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs';
 import { homedir } from 'os';
+import { DEFAULT_DB_PATH } from '../config/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 let __dirname = path.dirname(__filename);
@@ -22,8 +23,6 @@ if (__dirname.endsWith('/src/db') || __dirname.endsWith('\\src/db') ||
   __dirname = path.dirname(__dirname);
 }
 
-const defaultDbPath = path.join(homedir(), ".config", "pm-ai", "pm-ai.db");
-
 export interface MigrationConfig {
   dbPath?: string;
   inMemory?: boolean;
@@ -35,7 +34,7 @@ export interface MigrationConfig {
 function getConnection(config: MigrationConfig): string {
   let dbPath = config.inMemory
     ? ':memory:'
-    : config.dbPath || defaultDbPath;
+    : config.dbPath || DEFAULT_DB_PATH;
 
   // Expand ~ to home directory
   if (dbPath.startsWith('~')) {
@@ -69,8 +68,20 @@ export async function runMigrations(config: MigrationConfig = {}): Promise<void>
   // Ensure the directory exists
   if (dbPath !== ':memory:') {
     const dbDir = path.dirname(dbPath);
+
+    // create directory if not exists
     if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
+      fs.mkdirSync(dbDir, {
+        recursive: true,
+        mode: 0o775
+      });
+    }
+
+    // try to fix directory permissions (ignore errors)
+    try {
+      fs.chmodSync(dbDir, 0o775);
+    } catch {
+      // Ignore - directory might have restricted permissions
     }
   }
 

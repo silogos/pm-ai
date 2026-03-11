@@ -2,13 +2,18 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
-import { init, runMigrations } from '@pm-ai/core'
+import { init, DEFAULT_DB_PATH } from '@pm-ai/core'
 import { apiRoutes } from './routes/index.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// Get config from environment or default
+function getDbPath(): string {
+  return process.env.PMAI_DB_PATH || DEFAULT_DB_PATH
+}
 
 export interface WebServerConfig {
   fixedPort?: number;
@@ -24,11 +29,15 @@ export interface WebServerInfo {
 }
 
 export async function createWebServer(config: WebServerConfig = {}): Promise<WebServerInfo> {
-  // Run migrations first to ensure schema is up to date
-  await runMigrations({ dbPath: config.dbPath });
+  // Check if we should skip migrations
+  const skipMigrations = process.env.PMAI_SKIP_MIGRATIONS === 'true';
 
-  // Initialize database with default path (~/.config/pm-ai/pmai.db)
-  await init({ path: config.dbPath });
+  if (skipMigrations) {
+    console.log('[Server] Skipping migrations (PMAI_SKIP_MIGRATIONS is set)');
+  }
+
+  // Initialize database (migrations run inside init unless skipMigrations is true)
+  await init({ path: config.dbPath, skipMigrations });
 
   const app = new Hono();
 
@@ -85,11 +94,11 @@ export async function createWebServer(config: WebServerConfig = {}): Promise<Web
   // Determine port - use PORT env var or fixedPort config or default to 8080
   const port = config.fixedPort || parseInt(process.env.PORT || '8080', 10);
 
-  // Start server - explicitly bind to localhost
+  // Start server - bind to all interfaces for better compatibility
   const server = serve({
     fetch: app.fetch,
-    port,
-    hostname: '127.0.0.1'
+    port
+    // Don't set hostname - let OS decide
   });
 
   server.on('error', (err: any) => {
@@ -114,8 +123,12 @@ export async function createWebServer(config: WebServerConfig = {}): Promise<Web
   };
 }
 
-// Auto-start server if this file is run directly
-createWebServer({}).catch((err) => {
+// Auto-start server when this file is executed directly
+// Note: This file is spawned as a child process by the MCP server,
+// or run directly via `pnpm dev:api` / `pnpm start`
+createWebServer({
+  dbPath: getDbPath()
+}).catch((err) => {
   console.error('Failed to start server:', err);
   process.exit(1);
 });
