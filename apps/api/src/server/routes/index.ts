@@ -188,7 +188,10 @@ app.get('/projects/:id', async (c) => {
         ...project,
         progress,
         plans,
-        tasks
+        tasks: tasks.map(task => ({
+          ...task,
+          dependencies: parseDependencies(task.dependencies)
+        }))
       }
     });
   } catch (err) {
@@ -238,7 +241,12 @@ app.get('/projects/:id/tasks', async (c) => {
       tasks = await getTasks(id);
     }
 
-    return c.json({ tasks });
+    return c.json({
+      tasks: tasks.map(task => ({
+        ...task,
+        dependencies: parseDependencies(task.dependencies)
+      }))
+    });
   } catch (err) {
     return handleError(err as Error, c);
   }

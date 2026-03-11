@@ -1,16 +1,28 @@
-import { useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Network, DataSet } from 'vis-network/standalone';
+import ReactFlow, {
+  Background,
+  Controls,
+  MiniMap,
+  BackgroundVariant
+} from 'reactflow';
+import type { Node, Edge, NodeTypes } from 'reactflow';
+import 'reactflow/dist/style.css';
+import dagre from 'dagre';
+
 import { projectsApi } from '../services/api';
 import type { Task } from '../types';
+import TaskNode from './nodes/TaskNode';
+
+const nodeTypes: NodeTypes = {
+  taskNode: TaskNode,
+};
 
 interface DependencyGraphProps {
   projectId: string;
 }
 
 export default function DependencyGraph({ projectId }: DependencyGraphProps) {
-  const networkRef = useRef<HTMLDivElement>(null);
-
   const { data: tasksData } = useQuery({
     queryKey: ['tasks', projectId],
     queryFn: async () => {
@@ -27,111 +39,38 @@ export default function DependencyGraph({ projectId }: DependencyGraphProps) {
     }
   });
 
-  useEffect(() => {
-    if (!networkRef.current || !tasksData?.tasks) return;
+  // Build nodes and edges
+  const { nodes, edges } = useMemo(() => {
+    if (!tasksData?.tasks) return { nodes: [], edges: [] };
 
-    const tasks = tasksData.tasks;
     const criticalPathIds = new Set(
       criticalPathData?.critical_path?.path?.map((node: any) => node.taskId) || []
     );
 
-    // Create nodes
-    const nodes = new DataSet(
-      tasks.map((task: Task) => ({
-        id: task.id,
-        label: task.title,
-        title: `${task.title}\nStatus: ${task.status}\nPriority: ${task.priority || 'None'}`,
-        color: {
-          background: getStatusColor(task.status),
-          border: criticalPathIds.has(task.id) ? '#ff5722' : getStatusColor(task.status),
-          highlight: {
-            background: '#1976d2',
-            border: '#1976d2'
-          }
-        },
-        borderWidth: criticalPathIds.has(task.id) ? 3 : 1,
-        font: {
-          size: 14,
-          color: '#333'
-        }
+    const nodes: Node[] = tasksData.tasks.map((task: Task) => ({
+      id: task.id,
+      type: 'taskNode',
+      position: { x: 0, y: 0 }, // Will be calculated by Dagre
+      data: {
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        isCritical: criticalPathIds.has(task.id)
+      }
+    }));
+
+    const edges: Edge[] = tasksData.tasks.flatMap((task: Task) =>
+      (task.dependencies || []).map((depId) => ({
+        id: `${depId}-${task.id}`,
+        source: depId,
+        target: task.id,
+        animated: criticalPathIds.has(task.id),
+        style: { stroke: criticalPathIds.has(task.id) ? '#ff5722' : '#999' }
       }))
     );
 
-    // Create edges
-    const edges = new DataSet<any>(
-      tasks.flatMap((task: Task) =>
-        (task.dependencies || []).map((depId) => ({
-          from: depId,
-          to: task.id,
-          arrows: 'to',
-          color: {
-            color: '#999',
-            highlight: '#1976d2'
-          }
-        }))
-      )
-    );
-
-    const networkInstance = new Network(
-      networkRef.current,
-      { nodes, edges },
-      {
-        nodes: {
-          shape: 'box',
-          margin: {
-            top: 10,
-            right: 10,
-            bottom: 10,
-            left: 10
-          },
-          widthConstraint: {
-            maximum: 200
-          }
-        },
-        edges: {
-          smooth: {
-            enabled: true,
-            type: 'cubicBezier',
-            forceDirection: 'horizontal',
-            roundness: 0.4
-          }
-        },
-        layout: {
-          hierarchical: {
-            enabled: true,
-            direction: 'LR',
-            sortMethod: 'directed',
-            nodeSpacing: 150,
-            levelSeparation: 200
-          }
-        },
-        physics: {
-          enabled: false
-        },
-        interaction: {
-          hover: true,
-          tooltipDelay: 200
-        }
-      }
-    );
-
-    return () => {
-      networkInstance.destroy();
-    };
+    return { nodes: getLayoutedNodes(nodes, edges), edges };
   }, [tasksData, criticalPathData]);
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'planned':
-        return '#ff9800';
-      case 'review':
-        return '#2196f3';
-      case 'done':
-        return '#4caf50';
-      default:
-        return '#9e9e9e';
-    }
-  };
 
   return (
     <div className="dependency-graph-container">
@@ -142,6 +81,7 @@ export default function DependencyGraph({ projectId }: DependencyGraphProps) {
         </p>
       </div>
 
+      {/* Critical Path Info */}
       {criticalPathData?.critical_path && criticalPathData.critical_path.path.length > 0 && (
         <div style={{ marginBottom: '1rem', padding: '1rem', background: '#e3f2fd', borderRadius: '4px' }}>
           <h4 style={{ marginBottom: '0.5rem' }}>Critical Path ({criticalPathData.critical_path.path.length} tasks)</h4>
@@ -155,7 +95,51 @@ export default function DependencyGraph({ projectId }: DependencyGraphProps) {
         </div>
       )}
 
-      <div ref={networkRef} className="dependency-graph" style={{ height: '500px' }} />
+      {/* React Flow Graph */}
+      <div style={{ height: '500px', width: '100%' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={true}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+          <Controls />
+          <MiniMap />
+        </ReactFlow>
+      </div>
     </div>
   );
+}
+
+// Dagre layout algorithm
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+function getLayoutedNodes(nodes: Node[], edges: Edge[]) {
+  dagreGraph.setGraph({ rankdir: 'LR', nodesep: 150, ranksep: 200 });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: 200, height: 80 });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  return nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - 100, // Center the node
+        y: nodeWithPosition.y - 40
+      }
+    };
+  });
 }
