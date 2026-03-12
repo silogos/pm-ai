@@ -250,7 +250,7 @@ Claude: [Uses open_dashboard tool]
 **Solutions:**
 1. Check if another service is using port 3000
 2. The MCP server logs will show the actual port if 3000 is busy
-3. Access manually: `http://localhost:3000`
+3. Access manually: `http://localhost:8787`
 
 **Problem: Changes not reflected in web dashboard**
 
@@ -272,7 +272,7 @@ pnpm dev:api
 pnpm dev:web
 ```
 
-The API will be available at `http://localhost:3000` and the web dashboard at `http://localhost:5173`.
+The API will be available at `http://localhost:8787` and the web dashboard at `http://localhost:6363`.
 
 ### Start MCP Server Only
 ```bash

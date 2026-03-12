@@ -10,61 +10,75 @@ const InjectClaudeMdSchema = z.object({
 
 const PM_AI_CLAUDE_MD_CONTENT = `# PM-AI Workflow for AI Agents
 
-This project uses PM-AI for project management. When working on this project, follow this workflow:
+⚠️ **CRITICAL: This project uses PM-AI database as the SINGLE SOURCE OF TRUTH for all project management.**
 
-## Core Workflow
+## Mandatory Workflow
 
-1. **Initialize Project First**
-   → "Initialize PM-AI project for [feature/folder name]"
-   → Returns project_id for tracking
+When working on this project, you MUST follow this workflow:
 
-2. **Breakdown & Save Plans**
-   → After discussing requirements, ask to save plan
-   → "Save this as PM-AI plan with these tasks..."
-   → Auto-creates tasks with dependencies
+1. **Check for Existing Plans First**
+   → Always ask: "What plans exist in PM-AI for this feature?"
+   → Use \`show_workspace\` to see all features and their progress
+   → Use \`filter_tasks\` to see tasks for a specific feature
 
-3. **Work in Dependency Order**
-   → Check critical path before starting: "What's the critical path?"
-   → Work through tasks in order
-   → Update status: "Mark [task] as done/in_review"
+2. **Before Starting Any Work**
+   → Check if a plan already exists in PM-AI
+   → If plan exists, work from those tasks - DO NOT create new plans
+   → If no plan exists, use \`init_project\` or \`create_feature\` first
 
-4. **Track Progress**
-   → "Show project progress"
-   → "Filter tasks by status: planned"
-   → Use web dashboard for visual view
+3. **When Creating New Plans**
+   → Use \`save_plan\` tool to store in PM-AI database
+   → NEVER write markdown files as the primary plan storage
+   → Markdown files are only for reference, not tracking
 
-## Key Tools Reference
+4. **While Working**
+   → Update task status in PM-AI: \`update_task\`
+   → Check critical path: \`get_critical_path\`
+   → Mark tasks as "done" immediately after completion
 
-- \`init_project\` - Start tracking new work
-- \`save_plan\` - Save plans with tasks
-- \`update_task\` - Change task status/details
-- \`get_critical_path\` - Find blockers
-- \`open_dashboard\` - Visual UI (http://localhost:3000)
+5. **After Completing Work**
+   → ALWAYS update the corresponding task in PM-AI to "done"
+   → Do not rely on markdown files for completion status
 
-## Quick Examples
+## Key MCP Tools (MUST USE)
+
+- \`show_workspace\` - List all features before starting
+- \`filter_tasks\` - See tasks for a feature (by status/priority)
+- \`save_plan\` - Save plans to PM-AI database (NOT markdown)
+- \`update_task\` - Mark tasks as done/planned/review
+- \`get_critical_path\` - Find blocking tasks
+- \`open_dashboard\` - Visual view at http://localhost:8787
+
+## Examples
 
 \`\`\`
-# Start new feature
-"Init PM-AI for user-auth feature"
+# BEFORE starting work - check existing
+"Show workspace to see all features"
+"Filter tasks for feature XYZ with status planned"
 
-# After planning
-"Save this plan with all the tasks we discussed"
+# Start new work (only if no plan exists)
+"Init PM-AI for new-feature"
+"Save this plan with tasks: [list tasks]"
 
-# While working
-"What's blocking the OAuth task?"
-"Mark JWT task as done"
+# AFTER completing work
+"Mark task 'Implement auth' as done"
+"Update task 'Add tests' status to done"
 
-# Check status
-"Show progress of user-auth project"
-"What tasks are still planned?"
+# Check progress
+"What's the critical path for feature XYZ?"
+"Show progress of this feature"
 \`\`\`
 
-## Important Notes
+## CRITICAL RULES
 
-- Always initialize PM-AI project before creating plans
-- Let Claude handle task IDs and dependencies
-- Update task status regularly for accurate progress
-- Database: ~/.config/pm-ai/pmai.db
+1. **NEVER** use markdown files as the source of truth
+2. **ALWAYS** check PM-AI database before creating new plans
+3. **MUST** update task status in PM-AI after completing work
+4. **NEVER** create duplicate plans if one already exists
+5. **ALWAYS** use PM-AI tools for progress tracking
+
+Database: ~/.config/pm-ai/pmai.db
+Dashboard: http://localhost:8787
 `;
 
 export async function registerInjectClaudeMdTool(server: McpServer): Promise<void> {

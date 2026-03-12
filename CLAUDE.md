@@ -25,195 +25,75 @@ pm-ai/
 └── run-dev.sh      # Start all services
 ```
 
-## PM-AI Workflow for AI Agents
+# PM-AI Workflow for AI Agents
 
-This project uses PM-AI for project management. When working on this project, follow this workflow:
+⚠️ **CRITICAL: This project uses PM-AI database as the SINGLE SOURCE OF TRUTH for all project management.**
 
-### Core Workflow
+## Mandatory Workflow
 
-1. **Initialize Project First**
-   → "Initialize PM-AI project for [feature/folder name]"
-   → Returns project_id for tracking
+When working on this project, you MUST follow this workflow:
 
-2. **Breakdown & Save Plans**
-   → After discussing requirements, ask to save plan
-   → "Save this as a plan in PM-AI with these tasks..."
-   → Auto-creates tasks with dependencies
+1. **Check for Existing Plans First**
+   → Always ask: "What plans exist in PM-AI for this feature?"
+   → Use `show_workspace` to see all features and their progress
+   → Use `filter_tasks` to see tasks for a specific feature
 
-3. **Work in Dependency Order**
-   → Check critical path before starting: "What's the critical path?"
-   → Work through tasks in order
-   → Update status: "Mark [task] as done/in_review"
+2. **Before Starting Any Work**
+   → Check if a plan already exists in PM-AI
+   → If plan exists, work from those tasks - DO NOT create new plans
+   → If no plan exists, use `init_project` or `create_feature` first
 
-4. **Track Progress**
-   → "Show project progress"
-   → "Filter tasks by status: planned"
-   → Use web dashboard for visual view
+3. **When Creating New Plans**
+   → Use `save_plan` tool to store in PM-AI database
+   → NEVER write markdown files as the primary plan storage
+   → Markdown files are only for reference, not tracking
 
-### Folder-Based Workflow
+4. **While Working**
+   → Update task status in PM-AI: `update_task`
+   → Check critical path: `get_critical_path`
+   → Mark tasks as "done" immediately after completion
 
-PM-AI now supports folder-based project management for a more natural workflow:
+5. **After Completing Work**
+   → ALWAYS update the corresponding task in PM-AI to "done"
+   → Do not rely on markdown files for completion status
 
-1. **Initialize PM-AI in Current Folder**
-   → "init pm-ai" or "set up PM-AI here" or "initialize PM-AI project"
-   → Creates `.pm-ai` config file in current directory
-   → Uses folder name as project name
+## Key MCP Tools (MUST USE)
 
-2. **Sync Markdown Plans**
-   → "sync plans from files" or "import markdown files"
-   → Scans folder for `.md` files
-   → Each file becomes a plan (first heading = title)
+- `show_workspace` - List all features before starting
+- `filter_tasks` - See tasks for a feature (by status/priority)
+- `save_plan` - Save plans to PM-AI database (NOT markdown)
+- `update_task` - Mark tasks as done/planned/review
+- `get_critical_path` - Find blocking tasks
+- `open_dashboard` - Visual view at http://localhost:8787
 
-3. **View Workspace**
-   → "show workspace" or "list all PM-AI projects"
-   → Shows all projects in workspace with statistics
+## Examples
 
-4. **Create Plans Naturally**
-   → After AI creates a plan, it asks: "Do you want to save this plan in PM-AI?"
-   → Plans are automatically linked to the current folder's project
+```
+# BEFORE starting work - check existing
+"Show workspace to see all features"
+"Filter tasks for feature XYZ with status planned"
 
-**Config File (.pm-ai):**
-\`\`\`json
-{
-  "version": "1.0.0",
-  "projectId": "uuid",
-  "projectName": "my-project",
-  "createdAt": "2026-03-11T00:00:00.000Z",
-  "description": "Optional description"
-}
-\`\`\`
+# Start new work (only if no plan exists)
+"Init PM-AI for new-feature"
+"Save this plan with tasks: [list tasks]"
 
-### Folder-Based Examples
+# AFTER completing work
+"Mark task 'Implement auth' as done"
+"Update task 'Add tests' status to done"
 
-\`\`\`
-# Initialize in current folder
-"init pm-ai"
+# Check progress
+"What's the critical path for feature XYZ?"
+"Show progress of this feature"
+```
 
-# After creating plan markdown files
-"sync plans from files"
+## CRITICAL RULES
 
-# See all projects in workspace
-"show workspace"
+1. **NEVER** use markdown files as the source of truth
+2. **ALWAYS** check PM-AI database before creating new plans
+3. **MUST** update task status in PM-AI after completing work
+4. **NEVER** create duplicate plans if one already exists
+5. **ALWAYS** use PM-AI tools for progress tracking
 
-# Navigate to project folder and work
-"show progress of this project"
-\`\`\`
+Database: ~/.config/pm-ai/pmai.db
+Dashboard: http://localhost:8787
 
-### Key Tools Reference
-
-**Folder-Based Tools:**
-- \`init_project_in_current_folder\` - Initialize PM-AI in current directory (creates .pm-ai config)
-- \`scan_workspace\` / \`show_workspace\` - Show all PM-AI projects in workspace
-- \`sync_plans_from_files\` / \`sync_current_folder\` - Import .md files as plans
-
-**Core Tools:**
-- \`init_project\` - Start tracking new work (with explicit name)
-- \`save_plan\` - Save plans with tasks
-- \`update_task\` - Change task status/details
-- \`get_critical_path\` - Find blockers
-- \`open_dashboard\` - Visual UI (http://localhost:3000)
-
-### Quick Examples
-
-\`\`\`
-# Start new feature
-"Init PM-AI for user-auth feature"
-
-# After planning
-"Save this plan with all the tasks we discussed"
-
-# While working
-"What's blocking the OAuth task?"
-"Mark JWT task as done"
-
-# Check status
-"Show progress of user-auth project"
-"What tasks are still planned?"
-\`\`\`
-
-### Important Notes
-
-- Always initialize PM-AI project before creating plans
-- Let Claude handle task IDs and dependencies
-- Update task status regularly for accurate progress
-- Database: ~/.config/pm-ai/db.sqlite
-
-## Development
-
-### Start All Services
-\`\`\`
-./run-dev.sh
-\`\`\`
-
-### Start Individual Services
-\`\`\`
-# API only
-pnpm dev:api
-
-# Web dashboard
-pnpm dev:web
-
-# MCP server
-pnpm dev:mcp
-\`\`\`
-
-### Build
-\`\`\`
-pnpm build
-\`\`\`
-
-## Database
-
-- **Location**: `~/.config/pm-ai/db.sqlite`
-- **Auto-migration**: Applied on first run
-- **ORM**: Drizzle with libSQL client
-
-## MCP Server Setup
-
-The MCP server is at: `apps/mcp/dist/index.js`
-
-Configuration (for Claude Desktop/VS Code):
-\`\`\`json
-{
-  "mcpServers": {
-    "pmai": {
-      "command": "node",
-      "args": ["/absolute/path/to/pm-ai/apps/mcp/dist/index.js"]
-    }
-  }
-}
-\`\`\`
-
-## Testing PM-AI MCP Integration
-
-To test if PM-AI MCP is working:
-
-1. **Check available tools:**
-   ```
-   "What MCP tools do you have?"
-   ```
-   Should list: init_project, save_plan, update_task, etc.
-
-2. **Initialize test project:**
-   ```
-   "Init PM-AI project for test-feature"
-   ```
-   Should return project_id
-
-3. **Open dashboard:**
-   ```
-   "Open PM-AI dashboard"
-   ```
-   Should open http://localhost:3000
-
-## Tech Stack
-
-- **Runtime**: Node.js 18+
-- **Package Manager**: pnpm
-- **Build Tool**: Turborepo
-- **Language**: TypeScript
-- **Database**: SQLite with libSQL client
-- **ORM**: Drizzle ORM
-- **API Server**: Hono
-- **Web Framework**: React + Vite
-- **MCP SDK**: Model Context Protocol SDK

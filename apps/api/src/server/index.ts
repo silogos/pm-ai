@@ -91,8 +91,8 @@ export async function createWebServer(config: WebServerConfig = {}): Promise<Web
     return c.html(indexHtml.toString())
   })
 
-  // Determine port - use PORT env var or fixedPort config or default to 8080
-  const port = config.fixedPort || parseInt(process.env.PORT || '8080', 10);
+  // Determine port - use PORT env var or fixedPort config or default to 8787
+  const port = config.fixedPort || parseInt(process.env.PORT || '8787', 10);
 
   // Start server - bind to all interfaces for better compatibility
   const server = serve({
