@@ -75,15 +75,6 @@ export {
   getPlanById
 } from './services/plans/index.js';
 
-export {
-  parseMarkdownPlan,
-  syncPlanFile,
-  importPlansFromFolder,
-  importPlansFromCurrentFolder,
-  type MarkdownPlan,
-  type SyncResult
-} from './services/plans/planSyncService.js';
-
 // Task services
 export {
   saveTasks,

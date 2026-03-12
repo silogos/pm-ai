@@ -16,9 +16,6 @@ import {
   savePlan
 } from '@pm-ai/core';
 import {
-  importPlansFromFolder
-} from '@pm-ai/core';
-import {
   scanWorkspace,
   scanCurrentWorkspace,
   getWorkspaceStatistics
@@ -612,36 +609,6 @@ app.get('/workspace/current', async (c) => {
         statistics: stats
       },
       features: overview.features
-    });
-  } catch (err) {
-    return handleError(err as Error, c);
-  }
-});
-
-// POST /api/features/sync - Sync plans from markdown files
-app.post('/features/sync', async (c) => {
-  try {
-    const body = await c.req.json();
-    const { featureId, folderPath } = body;
-
-    if (!featureId) {
-      return c.json({
-        error: {
-          message: 'featureId is required',
-          code: 'MISSING_FEATURE_ID',
-          statusCode: 400
-        }
-      }, 400);
-    }
-
-    const syncPath = folderPath || process.cwd();
-    const result = await importPlansFromFolder(featureId, syncPath);
-
-    return c.json({
-      success: true,
-      feature_id: featureId,
-      folder_path: syncPath,
-      result
     });
   } catch (err) {
     return handleError(err as Error, c);

@@ -23,8 +23,8 @@ import { registerTasksResource } from './mcp/resources/tasks.js';
 import { registerProgressResource } from './mcp/resources/progress.js';
 import { registerOpenDashboardTool } from './mcp/tools/openDashboard.js';
 import { registerScanWorkspaceTool, registerScanCurrentWorkspaceTool } from './mcp/tools/scanWorkspace.js';
-import { registerSyncPlansFromFilesTool, registerSyncCurrentFolderTool } from './mcp/tools/syncPlansFromFiles.js';
-import { getConfig } from './config/index.js';
+import { registerAlwaysCheckPmAiPrompt } from './mcp/prompts/alwaysCheckPmAi.js';
+import { getConfig } from '@pm-ai/config';
 import { HttpServerManagerImpl } from './server/HttpServerManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -87,12 +87,6 @@ async function main() {
   await registerScanCurrentWorkspaceTool(server);
   console.error('Tool registered: show_workspace');
 
-  await registerSyncPlansFromFilesTool(server);
-  console.error('Tool registered: sync_plans_from_files');
-
-  await registerSyncCurrentFolderTool(server);
-  console.error('Tool registered: sync_current_folder');
-
   await registerInjectClaudeMdTool(server);
   console.error('Tool registered: inject_claude_md');
 
@@ -124,6 +118,9 @@ async function main() {
   console.error('Tool registered: open_dashboard');
 
   // Register MCP prompts
+  await registerAlwaysCheckPmAiPrompt(server);
+  console.error('Prompt registered: always_check_pm_ai_first');
+
   await registerBreakdownPrompt(server);
   console.error('Prompt registered: breakdown_markdown_plan');
 

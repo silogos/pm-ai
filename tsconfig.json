@@ -3,7 +3,9 @@
   "references": [
     { "path": "./packages/core" },
     { "path": "./packages/utils" },
+    { "path": "./packages/config" },
     { "path": "./apps/api" },
+    { "path": "./apps/cli" },
     { "path": "./apps/mcp" },
     { "path": "./apps/web" }
   ]
