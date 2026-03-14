@@ -6,7 +6,7 @@
 export { DEFAULT_DB_PATH } from './config/database.js';
 
 // Database client
-export { init, getDb, closeDatabase } from './db/client.js';
+export { init, getDb, closeDatabase, copyTemplateDatabase } from './db/client.js';
 
 // Migration runner
 export { runMigrations } from './db/migrate.js';
@@ -72,7 +72,8 @@ export {
 export {
   savePlan,
   getPlans,
-  getPlanById
+  getPlanById,
+  updatePlan
 } from './services/plans/index.js';
 
 // Task services

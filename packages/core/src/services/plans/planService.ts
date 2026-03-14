@@ -25,3 +25,29 @@ export async function getPlanById(planId: string): Promise<Plan | null> {
   const result = await db.select().from(plans).where(eq(plans.id, planId)).limit(1);
   return result[0] || null;
 }
+
+/**
+ * Update plan title and/or markdown
+ */
+export async function updatePlan(planId: string, title?: string, markdown?: string): Promise<Plan | null> {
+  const db = getDb();
+  const updateData: Partial<{ title: string; markdown: string }> = {};
+
+  if (title !== undefined) {
+    updateData.title = title;
+  }
+  if (markdown !== undefined) {
+    updateData.markdown = markdown;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return await getPlanById(planId);
+  }
+
+  const result = await db
+    .update(plans)
+    .set(updateData)
+    .where(eq(plans.id, planId))
+    .returning();
+  return result[0] || null;
+}

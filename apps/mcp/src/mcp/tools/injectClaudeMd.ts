@@ -8,9 +8,49 @@ const InjectClaudeMdSchema = z.object({
   overwrite: z.boolean().optional().describe('Optional: If true, overwrites existing PM-AI section. If false (default), appends or skips if exists.')
 });
 
-const PM_AI_CLAUDE_MD_CONTENT = `# PM-AI Workflow for AI Agents
+const PM_AI_START_MARKER = '<!-- PM-AI-START -->';
+const PM_AI_END_MARKER = '<!-- PM-AI-END -->';
+
+const PM_AI_CLAUDE_MD_CONTENT = `<!-- PM-AI-START -->
+# PM-AI Workflow for AI Agents
 
 ⚠️ **CRITICAL: This project uses PM-AI database as the SINGLE SOURCE OF TRUTH for all project management.**
+
+## STATE MUTATION RULE
+
+Any action that changes project state MUST use a PM-AI tool.
+
+This includes:
+- Creating plans
+- Updating plans
+- Creating tasks
+- Updating tasks
+- Marking tasks complete
+
+State changes must NEVER be done only in chat.
+All state mutations require immediate database persistence via PM-AI tools.
+
+## Plan Creation Rule
+
+When creating a plan:
+1. Generate the plan internally
+2. Immediately call the \`save_plan\` tool
+3. DO NOT output the plan markdown in chat
+4. Only confirm after the plan is saved
+
+Plans must never exist only in chat.
+They must always be stored in PM-AI database.
+
+## Standard Execution Pattern
+
+When working on tasks:
+1. Find the task in PM-AI
+2. Mark task as "review"
+3. Implement the work
+4. Mark task as "done"
+
+Never complete work without updating the task status.
+Always use PM-AI tools for state transitions.
 
 ## Mandatory Workflow
 
@@ -60,9 +100,14 @@ When working on this project, you MUST follow this workflow:
 "Init PM-AI for new-feature"
 "Save this plan with tasks: [list tasks]"
 
-# AFTER completing work
+# Task execution pattern
+"Mark task 'Implement auth' as review"
+[...implement work...]
 "Mark task 'Implement auth' as done"
-"Update task 'Add tests' status to done"
+
+# AFTER completing work
+"Mark task 'Add tests' as done"
+"Update task 'Refactor API' status to done"
 
 # Check progress
 "What's the critical path for feature XYZ?"
@@ -76,10 +121,13 @@ When working on this project, you MUST follow this workflow:
 3. **MUST** update task status in PM-AI after completing work
 4. **NEVER** create duplicate plans if one already exists
 5. **ALWAYS** use PM-AI tools for progress tracking
+6. **NEVER** output plan markdown in chat without calling \`save_plan\`
+7. **MUST** mark tasks as "review" before starting work
+8. **MUST** mark tasks as "done" after completing work
 
 Database: ~/.config/pm-ai/pmai.db
 Dashboard: http://localhost:8787
-`;
+<!-- PM-AI-END -->`;
 
 export async function registerInjectClaudeMdTool(server: McpServer): Promise<void> {
   server.tool(
@@ -105,11 +153,42 @@ export async function registerInjectClaudeMdTool(server: McpServer): Promise<voi
         if (fs.existsSync(claudeMdPath)) {
           existingContent = fs.readFileSync(claudeMdPath, 'utf-8');
 
-          // Check if PM-AI section already exists
-          const pmAiSectionStart = existingContent.indexOf('# PM-AI Workflow for AI Agents');
-          if (pmAiSectionStart !== -1) {
-            hasPmAiSection = true;
+          // Try new detection method first (comment markers)
+          let startMarkerIndex = existingContent.indexOf(PM_AI_START_MARKER);
+          let endMarkerIndex = existingContent.indexOf(PM_AI_END_MARKER);
 
+          // If no markers found, try old detection method (heading)
+          if (startMarkerIndex === -1 || endMarkerIndex === -1) {
+            const oldHeadingIndex = existingContent.indexOf('# PM-AI Workflow for AI Agents');
+            if (oldHeadingIndex !== -1) {
+              // Treat as existing section that will be replaced
+              startMarkerIndex = oldHeadingIndex;
+              // Find end by looking for next major heading or end of file
+              const remainingContent = existingContent.substring(oldHeadingIndex);
+              const nextHeadingMatch = remainingContent.match(/\n[^#]\n# /);
+              endMarkerIndex = nextHeadingMatch
+                ? oldHeadingIndex + nextHeadingMatch.index
+                : existingContent.length;
+              hasPmAiSection = true;
+            }
+          } else {
+            // Both markers found
+            hasPmAiSection = true;
+          }
+
+          // Handle partial markers (corrupted section)
+          if ((startMarkerIndex === -1) !== (endMarkerIndex === -1)) {
+            // Clean up corrupted section
+            if (startMarkerIndex !== -1) {
+              existingContent = existingContent.substring(0, startMarkerIndex).trim();
+              hasPmAiSection = false;
+            } else if (endMarkerIndex !== -1) {
+              existingContent = existingContent.substring(endMarkerIndex + PM_AI_END_MARKER.length).trim();
+              hasPmAiSection = false;
+            }
+          }
+
+          if (hasPmAiSection) {
             if (!input.overwrite) {
               return {
                 content: [{
@@ -126,8 +205,11 @@ export async function registerInjectClaudeMdTool(server: McpServer): Promise<voi
             }
 
             // Remove existing PM-AI section
-            const beforePmAi = existingContent.substring(0, pmAiSectionStart).trim();
-            existingContent = beforePmAi;
+            const beforePmAi = existingContent.substring(0, startMarkerIndex).trim();
+            const afterPmAi = endMarkerIndex < existingContent.length
+              ? existingContent.substring(endMarkerIndex + (existingContent.includes(PM_AI_END_MARKER) ? PM_AI_END_MARKER.length : 0)).trim()
+              : '';
+            existingContent = beforePmAi + (afterPmAi ? '\n\n' + afterPmAi : '');
           }
         }
 
@@ -143,6 +225,12 @@ export async function registerInjectClaudeMdTool(server: McpServer): Promise<voi
 
         // Write to file
         fs.writeFileSync(claudeMdPath, newContent, 'utf-8');
+
+        // Validate that markers were written
+        const writtenContent = fs.readFileSync(claudeMdPath, 'utf-8');
+        if (!writtenContent.includes(PM_AI_START_MARKER) || !writtenContent.includes(PM_AI_END_MARKER)) {
+          throw new Error('Validation failed: PM-AI markers not found in written file');
+        }
 
         return {
           content: [{

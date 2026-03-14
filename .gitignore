@@ -21,6 +21,9 @@ out
 *.sqlite
 *.sqlite-journal
 
+# PM-AI template database (generated during build)
+packages/core/src/db/pm-ai.db
+
 # Logs
 *.log
 logs

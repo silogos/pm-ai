@@ -11,7 +11,11 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:push:dev": "DEV=1 drizzle-kit push",
+    "db:studio:dev": "DEV=1 drizzle-kit studio"
   },
   "dependencies": {
     "@libsql/client": "^0.10.0",
