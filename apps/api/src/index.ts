@@ -29,15 +29,9 @@ export interface WebServerInfo {
 }
 
 export async function createWebServer(config: WebServerConfig = {}): Promise<WebServerInfo> {
-  // Check if we should skip migrations
-  const skipMigrations = process.env.PMAI_SKIP_MIGRATIONS === 'true';
-
-  if (skipMigrations) {
-    console.log('[Server] Skipping migrations (PMAI_SKIP_MIGRATIONS is set)');
-  }
-
-  // Initialize database (migrations run inside init unless skipMigrations is true)
-  await init({ path: config.dbPath, skipMigrations });
+  // Initialize database
+  // Note: Migrations should be run manually via CLI: pnpm run db:migrate
+  await init({ path: config.dbPath });
 
   const app = new Hono();
 
@@ -53,19 +47,22 @@ export async function createWebServer(config: WebServerConfig = {}): Promise<Web
   // API routes
   app.route('/api', apiRoutes);
 
-  // Serve static files from web/dist
-  // __dirname is apps/api/dist/server/, so we need ../../../web/dist to reach apps/web/dist
-  const distPath = path.join(__dirname, '../../../web/dist')
+  // Serve static files from web/dist ONLY in production mode
+  // Default to production, set NODE_ENV=development for development
+  const isProduction = process.env.NODE_ENV !== 'development'
+  const distPath = path.join(__dirname, './web')
 
-  // SPA fallback - serve index.html for non-API routes
-  app.get('*', async (c) => {
+  // Only serve static files in production (when web dist is copied to api dist/web)
+  const fs = await import('fs')
+  if (isProduction && fs.existsSync(distPath)) {
+    // SPA fallback - serve index.html for non-API routes
+    app.get('*', async (c) => {
     // Skip API routes and health check
     if (c.req.path.startsWith('/api') || c.req.path === '/health') {
       return c.html('Not found', 404)
     }
 
     // Try to serve static file first
-    const fs = await import('fs')
     const filePath = path.join(distPath, c.req.path)
 
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
@@ -86,10 +83,19 @@ export async function createWebServer(config: WebServerConfig = {}): Promise<Web
       return c.body(file)
     }
 
-    // Serve index.html for SPA routing (client-side routing)
-    const indexHtml = fs.readFileSync(path.join(distPath, 'index.html'))
-    return c.html(indexHtml.toString())
-  })
+      // Serve index.html for SPA routing (client-side routing)
+      const indexHtml = fs.readFileSync(path.join(distPath, 'index.html'))
+      return c.html(indexHtml.toString())
+    })
+  } else {
+    // In development, only serve API - static files are served by web dev server
+    app.get('*', (c) => {
+      if (c.req.path.startsWith('/api') || c.req.path === '/health') {
+        return c.html('API endpoint not found', 404)
+      }
+      return c.html('Static files not served in development. Please run the web dev server separately.', 404)
+    })
+  }
 
   // Determine port - use PORT env var or fixedPort config or default to 8787
   const port = config.fixedPort || parseInt(process.env.PORT || '8787', 10);

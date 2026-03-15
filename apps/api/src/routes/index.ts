@@ -8,12 +8,14 @@ import {
   getFeatureById,
   createFeature,
   createFeatureWithDescription,
-  getWorkspaceByPath
+  getWorkspaceByPath,
+  type Feature
 } from '@pm-ai/core';
 import {
   getPlans,
   getPlanById,
-  savePlan
+  savePlan,
+  type Plan
 } from '@pm-ai/core';
 import {
   scanWorkspace,
@@ -33,7 +35,8 @@ import {
   updateTaskFlag,
   updateTaskDependencies,
   deleteTask,
-  getTaskById
+  getTaskById,
+  type Task
 } from '@pm-ai/core';
 import {
   getComments,
@@ -152,7 +155,7 @@ app.get('/features', async (c) => {
 
     // Get progress for each feature
     const featuresWithProgress = await Promise.all(
-      features.map(async (feature) => {
+      features.map(async (feature: Feature) => {
         const progress = await getFeatureProgress(feature.id);
         return {
           ...feature,
@@ -175,7 +178,7 @@ app.get('/workspaces/:id/features', async (c) => {
 
     // Get progress for each feature
     const featuresWithProgress = await Promise.all(
-      features.map(async (feature) => {
+      features.map(async (feature: Feature) => {
         const progress = await getFeatureProgress(feature.id);
         return {
           ...feature,
@@ -263,7 +266,7 @@ app.get('/features/:id', async (c) => {
         ...feature,
         progress,
         plans,
-        tasks: tasks.map(task => ({
+        tasks: tasks.map((task: Task) => ({
           ...task,
           dependencies: parseDependencies(task.dependencies)
         }))
@@ -282,7 +285,7 @@ app.get('/features/:id/plans', async (c) => {
 
     // Get progress for each plan
     const plansWithProgress = await Promise.all(
-      plans.map(async (plan) => {
+      plans.map(async (plan: Plan) => {
         const progress = await getPlanProgress(plan.id);
         return {
           ...plan,
@@ -317,7 +320,7 @@ app.get('/features/:id/tasks', async (c) => {
     }
 
     return c.json({
-      tasks: tasks.map(task => ({
+      tasks: tasks.map((task: Task) => ({
         ...task,
         dependencies: parseDependencies(task.dependencies)
       }))
@@ -397,7 +400,7 @@ app.get('/plans/:id', async (c) => {
       plan: {
         ...plan,
         progress,
-        tasks: tasks.map(task => ({
+        tasks: tasks.map((task: Task) => ({
           ...task,
           dependencies: parseDependencies(task.dependencies)
         }))
@@ -415,7 +418,7 @@ app.get('/plans/:id/tasks', async (c) => {
     const tasks = await getTasksByPlanId(id);
 
     return c.json({
-      tasks: tasks.map(task => ({
+      tasks: tasks.map((task: Task) => ({
         ...task,
         dependencies: parseDependencies(task.dependencies)
       }))

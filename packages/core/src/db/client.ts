@@ -1,12 +1,10 @@
 import { drizzle } from 'drizzle-orm/libsql/driver';
 import { createClient } from '@libsql/client';
 import * as schema from './schema.js';
-import { migrate } from 'drizzle-orm/libsql/migrator';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs';
 import { homedir } from 'os';
-import { DEFAULT_DB_PATH } from '../config/database.js';
 import { copyFileSync, existsSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,23 +25,16 @@ if (__dirname.endsWith('/src/db') || __dirname.endsWith('\\src/db') ||
 /**
  * Get connection string from config
  * Handles path normalization, ~ expansion, and relative-to-absolute conversion
- * Also respects DEV environment variable for development mode
  */
 function getConnection(config: DatabaseConfig): string {
   let dbPath = config.inMemory
     ? ':memory:'
     : config.path;
 
-  // If no path provided, use environment-based default
+  // If no path provided, use local database in src/db
+  // __dirname points to package root after adjustment
   if (!dbPath) {
-    if (process.env.DEV === '1' || process.env.NODE_ENV === 'development') {
-      // Development: use local database in src/db
-      // __dirname points to package root after adjustment
-      dbPath = path.join(__dirname, 'src', 'db', 'pm-ai.db');
-    } else {
-      // Production: use user config directory
-      dbPath = DEFAULT_DB_PATH;
-    }
+    dbPath = path.join(__dirname, 'src', 'db', 'pm-ai.db');
   }
 
   // Expand ~ to home directory
@@ -63,7 +54,6 @@ function getConnection(config: DatabaseConfig): string {
 export interface DatabaseConfig {
   path?: string;  // Database file path
   inMemory?: boolean;  // Use in-memory database for testing
-  skipMigrations?: boolean;  // Skip running migrations (useful for tests)
 }
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
@@ -99,102 +89,27 @@ export async function init(config: DatabaseConfig = {}): Promise<ReturnType<type
   }
 
   libsqlClient = createClient({ url: connectionString });
-  await libsqlClient.execute('PRAGMA foreign_keys = ON');
 
-  // Enable WAL mode for better concurrent access (multi-agent scenarios)
-  await libsqlClient.execute('PRAGMA journal_mode=WAL');
-  await libsqlClient.execute('PRAGMA synchronous=NORMAL');
-  await libsqlClient.execute('PRAGMA busy_timeout=5000');
+  // Execute PRAGMA statements individually to avoid transaction conflicts
+  await libsqlClient.execute("PRAGMA foreign_keys = ON");
+  await libsqlClient.execute("PRAGMA busy_timeout = 5000");
+  await libsqlClient.execute("PRAGMA journal_mode = WAL");
+  await libsqlClient.execute("PRAGMA synchronous = NORMAL");
+  
 
   dbInstance = drizzle({ client: libsqlClient, schema });
-
-  // Run migrations if not skipped
-  if (!config.skipMigrations) {
-    await runMigrations();
-  }
 
   return dbInstance;
 }
 
-async function runMigrations(): Promise<void> {
-  // Path to migrations folder
-  // The migrations folder is at packages/core/src/db/drizzle
-  const migrationsFolder = path.join(__dirname, 'src', 'db', 'drizzle');
-
-  console.error('[DB] Running migrations from:', migrationsFolder);
-
-  try {
-    // Use official Drizzle migrator
-    await migrate(dbInstance!, { migrationsFolder });
-    console.error('[DB] Migrations completed successfully');
-  } catch (error) {
-    console.error('[DB] Migration error:', error);
-    throw error;
-  }
-}
-
 /**
- * Copy template database from packages/core/src/db/pm-ai.db to user config directory
- * Only copies if the target database doesn't exist yet
- * Skips in development mode (DEV=1 or NODE_ENV=development)
+ * Copy template database (no-op - always using local database now)
  *
- * @returns true if copy was performed, false if skipped
+ * @returns false (no-op)
  */
 export async function copyTemplateDatabase(): Promise<boolean> {
-  // Skip copy in development mode - use local database directly
-  if (process.env.DEV === '1' || process.env.NODE_ENV === 'development') {
-    console.error('[DB] Development mode: using local database at ./src/db/pm-ai.db');
-    return false;
-  }
-
-  const targetPath = DEFAULT_DB_PATH;
-
-  // Check if target already exists
-  if (existsSync(targetPath)) {
-    console.error('[DB] Database already exists at:', targetPath);
-    return false;
-  }
-
-  // Template database path (packages/core/src/db/pm-ai.db)
-  // Need to resolve this from the current file location
-  let templatePath = path.join(__dirname, 'pm-ai.db');
-
-  // Adjust path based on whether we're in src/db or dist/db
-  if (__dirname.endsWith('/src/db') || __dirname.endsWith('\\src/db')) {
-    // We're in src/db, template is right here
-    templatePath = path.join(__dirname, 'pm-ai.db');
-  } else if (__dirname.endsWith('/dist/db') || __dirname.endsWith('\\dist/db')) {
-    // We're in dist/db, template is in src/db
-    templatePath = path.join(path.dirname(path.dirname(__dirname)), 'src', 'db', 'pm-ai.db');
-  } else if (__dirname.endsWith('/src') || __dirname.endsWith('\\src')) {
-    templatePath = path.join(__dirname, 'db', 'pm-ai.db');
-  } else if (__dirname.endsWith('/dist') || __dirname.endsWith('\\dist')) {
-    templatePath = path.join(path.dirname(__dirname), 'src', 'db', 'pm-ai.db');
-  }
-
-  // Check if template exists
-  if (!existsSync(templatePath)) {
-    console.error('[DB] Template database not found at:', templatePath);
-    console.error('[DB] Please run "pnpm run db:push:dev" to create template database');
-    return false;
-  }
-
-  // Ensure target directory exists
-  const targetDir = path.dirname(targetPath);
-  if (!existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true, mode: 0o775 });
-  }
-
-  // Copy template to target
-  try {
-    copyFileSync(templatePath, targetPath);
-    console.error('[DB] Template database copied from:', templatePath);
-    console.error('[DB] Template database copied to:', targetPath);
-    return true;
-  } catch (error) {
-    console.error('[DB] Failed to copy template database:', error);
-    throw error;
-  }
+  console.error('[DB] Using local database at ./src/db/pm-ai.db');
+  return false;
 }
 
 export function getDb(): ReturnType<typeof drizzle> {
