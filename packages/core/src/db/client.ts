@@ -118,8 +118,8 @@ export async function init(config: DatabaseConfig = {}): Promise<ReturnType<type
 
 async function runMigrations(): Promise<void> {
   // Path to migrations folder
-  // The migrations folder is at packages/core/drizzle (sibling to package root)
-  const migrationsFolder = path.join(__dirname, 'drizzle');
+  // The migrations folder is at packages/core/src/db/drizzle
+  const migrationsFolder = path.join(__dirname, 'src', 'db', 'drizzle');
 
   console.error('[DB] Running migrations from:', migrationsFolder);
 

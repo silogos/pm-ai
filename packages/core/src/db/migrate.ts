@@ -94,8 +94,8 @@ export async function runMigrations(config: MigrationConfig = {}): Promise<void>
     await client.execute('PRAGMA foreign_keys = ON');
 
     // Path to migrations folder
-    // The migrations folder is at packages/core/drizzle (sibling to package root)
-    const migrationsFolder = path.join(__dirname, 'drizzle');
+    // The migrations folder is at packages/core/src/db/drizzle
+    const migrationsFolder = path.join(__dirname, 'src', 'db', 'drizzle');
 
     console.error('[Migrations] Applying migrations from:', migrationsFolder);
 
