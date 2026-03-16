@@ -1,43 +1,14 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import * as fs from 'fs';
-import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { init } from '@pm-ai/core';
-import { registerInitProjectTool } from './mcp/tools/initProject.js';
-import { registerInitWorkspaceInCurrentFolderTool } from './mcp/tools/initWorkspaceInCurrentFolder.js';
-import { registerCreateFeatureTool } from './mcp/tools/createFeature.js';
-import { registerSavePlanTool } from './mcp/tools/savePlan.js';
-import { registerUpdateTaskTool } from './mcp/tools/updateTask.js';
-import { registerDeleteTaskTool } from './mcp/tools/deleteTask.js';
-import { registerAddTaskCommentTool } from './mcp/tools/addTaskComment.js';
-import { registerSearchTasksTool } from './mcp/tools/searchTasks.js';
-import { registerFilterTasksTool } from './mcp/tools/filterTasks.js';
-import { registerGetTaskDependenciesTool } from './mcp/tools/getTaskDependencies.js';
-import { registerGetCriticalPathTool } from './mcp/tools/getCriticalPath.js';
-import { registerInjectClaudeMdTool } from './mcp/tools/injectClaudeMd.js';
-import { registerGetTaskTool } from './mcp/tools/getTask.js';
-import { registerCreateTasksTool } from './mcp/tools/createTasks.js';
-import { registerGetCommentsTool } from './mcp/tools/getComments.js';
-import { registerDeleteCommentTool } from './mcp/tools/deleteComment.js';
-import { registerGetPlanTool } from './mcp/tools/getPlan.js';
-import { registerUpdatePlanTool } from './mcp/tools/updatePlan.js';
-import { registerGetFeatureTool } from './mcp/tools/getFeature.js';
-import { registerUpdateFeatureTool } from './mcp/tools/updateFeature.js';
-import { registerGetWorkspaceTool } from './mcp/tools/getWorkspace.js';
-import { registerListWorkspacesTool } from './mcp/tools/listWorkspaces.js';
-import { registerAutoExecutePlanTool } from './mcp/tools/autoExecutePlan.js';
-import { registerBreakdownPrompt } from './mcp/prompts/breakdownMarkdownPlan.js';
-import { registerExecutePlanPrompt } from './mcp/prompts/executePlan.js';
-import { registerPlansResource } from './mcp/resources/plans.js';
-import { registerTasksResource } from './mcp/resources/tasks.js';
-import { registerProgressResource } from './mcp/resources/progress.js';
-import { registerOpenDashboardTool } from './mcp/tools/openDashboard.js';
-import { registerScanWorkspaceTool, registerScanCurrentWorkspaceTool } from './mcp/tools/scanWorkspace.js';
-import { registerAlwaysCheckPmAiPrompt } from './mcp/prompts/alwaysCheckPmAi.js';
+import { isProduction } from '@pm-ai/utils';
+import { registerTools } from './mcp/tools/index.js';
+import { registerPrompts } from './mcp/prompts/index.js';
+import { registerResources } from './mcp/resources/index.js';
 import { getConfig } from '@pm-ai/config';
-import { HttpServerManagerImpl } from './server/HttpServerManager.js';
 import { copyTemplateDatabase } from '@pm-ai/core';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -46,24 +17,13 @@ const __dirname = dirname(__filename);
 async function main() {
   console.error('Starting PM-AI MCP Server...');
 
-  // Set development mode by default for MCP server
-  // Production users can override with NODE_ENV=production
-  if (!process.env.NODE_ENV) {
-    process.env.DEV = '1';
-    console.error('🔧 Development mode: using local database at ./src/db/pm-ai.db');
+  if (!isProduction()) {
+    console.error('🔧 Development mode - verbose logging enabled');
   }
 
   const config = getConfig();
 
-  // Initialize HTTP Server Manager (lazy spawn - only when dashboard is opened)
-  const apiServerPath = join(__dirname, '../../api/dist/server/index.js');
-  const httpServerManager = new HttpServerManagerImpl({
-    apiServerPath,
-    preferredPort: config.apiUrl ? parseInt(config.apiUrl.split(':')[2]) : undefined,
-    dbPath: config.dbPath
-  });
-
-  console.error('ℹ️  HTTP server will spawn on-demand when dashboard is opened');
+  console.error('ℹ️  Dashboard server will spawn on-demand using pm-ai server command');
 
   // Check if CLAUDE.md exists and has PM-AI section
   const claudeMdPath = process.cwd() + '/CLAUDE.md';
@@ -84,119 +44,23 @@ async function main() {
     console.error('⚠️  Starting server anyway, but AI may not understand PM-AI workflow.');
   }
 
-  // Initialize database with copy on first use
+  // Initialize database (uses local ./src/db/pm-ai.db by default)
   await copyTemplateDatabase();
 
-  // Initialize database without migrations (template is already migrated)
-  // In dev mode, don't pass path so it uses the default dev database
+  // Initialize database
+  // Pass path only if provided in config, otherwise uses local database
   await init({
-    ...(process.env.DEV !== '1' && process.env.NODE_ENV !== 'development' ? { path: config.dbPath } : {}),
-    skipMigrations: true
+    ...(config.dbPath ? { path: config.dbPath } : {}),
   });
   const server = new McpServer({
     name: 'pm-ai-server',
     version: '1.0.0'
   });
 
-  // Register MCP tools
-  await registerInitProjectTool(server);
-  console.error('Tool registered: init_project');
-
-  await registerInitWorkspaceInCurrentFolderTool(server);
-  console.error('Tool registered: init_workspace_in_current_folder');
-
-  await registerCreateFeatureTool(server);
-  console.error('Tool registered: create_feature');
-
-  await registerScanWorkspaceTool(server);
-  console.error('Tool registered: scan_workspace');
-
-  await registerScanCurrentWorkspaceTool(server);
-  console.error('Tool registered: show_workspace');
-
-  await registerInjectClaudeMdTool(server);
-  console.error('Tool registered: inject_claude_md');
-
-  await registerSavePlanTool(server);
-  console.error('Tool registered: save_plan');
-
-  await registerUpdateTaskTool(server);
-  console.error('Tool registered: update_task');
-
-  await registerDeleteTaskTool(server);
-  console.error('Tool registered: delete_task');
-
-  await registerAddTaskCommentTool(server);
-  console.error('Tool registered: add_task_comment');
-
-  await registerSearchTasksTool(server);
-  console.error('Tool registered: search_tasks');
-
-  await registerFilterTasksTool(server);
-  console.error('Tool registered: filter_tasks');
-
-  await registerGetTaskDependenciesTool(server);
-  console.error('Tool registered: get_task_dependencies');
-
-  await registerGetCriticalPathTool(server);
-  console.error('Tool registered: get_critical_path');
-
-  await registerOpenDashboardTool(server, httpServerManager);
-  console.error('Tool registered: open_dashboard');
-
-  // Register new MCP tools
-  await registerGetTaskTool(server);
-  console.error('Tool registered: get_task');
-
-  await registerCreateTasksTool(server);
-  console.error('Tool registered: create_tasks');
-
-  await registerGetCommentsTool(server);
-  console.error('Tool registered: get_comments');
-
-  await registerDeleteCommentTool(server);
-  console.error('Tool registered: delete_comment');
-
-  await registerGetPlanTool(server);
-  console.error('Tool registered: get_plan');
-
-  await registerUpdatePlanTool(server);
-  console.error('Tool registered: update_plan');
-
-  await registerGetFeatureTool(server);
-  console.error('Tool registered: get_feature');
-
-  await registerUpdateFeatureTool(server);
-  console.error('Tool registered: update_feature');
-
-  await registerGetWorkspaceTool(server);
-  console.error('Tool registered: get_workspace');
-
-  await registerListWorkspacesTool(server);
-  console.error('Tool registered: list_workspaces');
-
-  await registerAutoExecutePlanTool(server);
-  console.error('Tool registered: auto_execute_plan');
-
-  // Register MCP prompts
-  await registerAlwaysCheckPmAiPrompt(server);
-  console.error('Prompt registered: always_check_pm_ai_first');
-
-  await registerBreakdownPrompt(server);
-  console.error('Prompt registered: breakdown_markdown_plan');
-
-  await registerExecutePlanPrompt(server);
-  console.error('Prompt registered: execute_plan');
-
-  // Register MCP resources
-  await registerPlansResource(server);
-  console.error('Resource registered: plans');
-
-  await registerTasksResource(server);
-  console.error('Resource registered: tasks');
-
-  await registerProgressResource(server);
-  console.error('Resource registered: progress');
+  // Register all MCP tools, prompts, and resources
+  await registerTools(server);
+  await registerPrompts(server);
+  await registerResources(server);
 
   // Connect to stdio transport
   const transport = new StdioServerTransport();
@@ -204,16 +68,6 @@ async function main() {
 
   console.error('PM-AI MCP Server running and ready');
   console.error('Waiting for MCP client connections...');
-
-  // Handle graceful shutdown
-  const shutdown = async () => {
-    console.error('Shutting down...');
-    await httpServerManager.kill();
-    process.exit(0);
-  };
-
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
 }
 
 main().catch((error) => {
