@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs';
 import { homedir } from 'os';
-import { copyFileSync, existsSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 let __dirname = path.dirname(__filename);

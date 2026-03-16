@@ -6,7 +6,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs';
 import { homedir } from 'os';
-import { DEFAULT_DB_PATH } from '../config/database.js';
+
+// Inline DEFAULT_DB_PATH to avoid module format issues
+const DEFAULT_DB_PATH = process.env.PMAI_DEV === '1'
+  ? path.join(process.cwd(), 'pmai-dev.db')
+  : path.join(homedir(), '.config', 'pm-ai', 'pmai.db');
 
 const __filename = fileURLToPath(import.meta.url);
 let __dirname = path.dirname(__filename);
