@@ -137,9 +137,11 @@ export async function createWebServer(config: WebServerConfig = {}): Promise<Web
 // Auto-start server when this file is executed directly
 // Note: This file is spawned as a child process by the MCP server,
 // or run directly via `pnpm dev:api` / `pnpm start`
-createWebServer({
-  dbPath: getDbPath()
-}).catch((err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  createWebServer({
+    dbPath: getDbPath()
+  }).catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
+}
