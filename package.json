@@ -11,13 +11,15 @@
     "dev:cli": "turbo run dev --filter=@pm-ai/cli",
     "build": "turbo run build",
     "build:web": "turbo run build --filter=@pm-ai/web",
-    "build:api": "turbo run build --filter=@pm-ai/api",
+    "build:api": "turbo run build --filter=@pm-ai/web && turbo run build --filter=@pm-ai/api",
+    "start": "turbo run start --filter=@pm-ai/api",
     "build:mcp": "turbo run build --filter=@pm-ai/mcp",
     "build:cli": "turbo run build --filter=@pm-ai/cli",
     "lint": "turbo run lint",
     "db:generate": "turbo run db:generate --filter=@pm-ai/db",
     "db:migrate": "turbo run db:migrate --filter=@pm-ai/db",
-    "clean": "rm -rf apps/*/dist packages/*/dist node_modules/.cache"
+    "clean": "rm -rf apps/*/dist packages/*/dist node_modules/.cache",
+    "pm-ai": "node apps/cli/dist/index.js"
   },
   "devDependencies": {
     "turbo": "^2.8.15",
