@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { createFeature, createFeatureWithDescription, getAllFeatures, getWorkspaceByPath } from '@pm-ai/core';
+import { createFeature, createFeatureWithDescription, getAllFeatures, getWorkspaceByPath, type Feature } from '@pm-ai/core';
 import * as path from 'path';
 
 const InitProjectSchema = z.object({
@@ -18,7 +18,7 @@ export async function registerInitProjectTool(server: McpServer): Promise<void> 
       try {
         // Check if feature with same name already exists in workspace
         const existingFeatures = await getAllFeatures();
-        const existingFeature = existingFeatures.find(f => f.name.toLowerCase() === input.name.toLowerCase());
+        const existingFeature = existingFeatures.find((f: Feature) => f.name.toLowerCase() === input.name.toLowerCase());
 
         if (existingFeature) {
           return {

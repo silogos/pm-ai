@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { filterTasks } from '@pm-ai/core';
+import { filterTasks, type Task } from '@pm-ai/core';
 import { getFeatureById } from '@pm-ai/core';
 import { parseDependencies } from '@pm-ai/core';
 
@@ -75,7 +75,7 @@ export async function registerFilterTasksTool(server: McpServer): Promise<void> 
                 plan_id: filters.planId
               },
               count: tasks.length,
-              tasks: tasks.map(task => ({
+              tasks: tasks.map((task) => ({
                 id: task.id,
                 plan_id: task.planId,
                 plan_title: task.planTitle,

@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getCriticalPath, detectCircularDependencies } from '@pm-ai/core';
+import { getCriticalPath, detectCircularDependencies, type CriticalPathNode } from '@pm-ai/core';
 import { getFeatureById } from '@pm-ai/core';
 
 const GetCriticalPathSchema = z.object({
@@ -35,7 +35,7 @@ export async function registerGetCriticalPathTool(server: McpServer): Promise<vo
         const criticalPath = await getCriticalPath(input.feature_id);
         result.critical_path = {
           length: criticalPath.length,
-          tasks: criticalPath.path.map(node => ({
+          tasks: criticalPath.path.map((node: CriticalPathNode) => ({
             position: node.position,
             task_id: node.taskId,
             title: node.title,

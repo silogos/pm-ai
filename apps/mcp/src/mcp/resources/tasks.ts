@@ -1,5 +1,5 @@
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getTasks, parseDependencies } from '@pm-ai/core';
+import { getTasks, parseDependencies, type Task } from '@pm-ai/core';
 import { getFeatureById } from '@pm-ai/core';
 
 export async function registerTasksResource(server: McpServer): Promise<void> {
@@ -46,7 +46,7 @@ export async function registerTasksResource(server: McpServer): Promise<void> {
             text: JSON.stringify({
               feature_id: featureId,
               feature_name: feature.name,
-              tasks: tasks.map(task => ({
+              tasks: tasks.map((task) => ({
                 id: task.id,
                 plan_id: task.planId,
                 plan_title: task.planTitle,

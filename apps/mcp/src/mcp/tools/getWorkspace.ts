@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getWorkspaceById, getWorkspaceFeatures, getFeatureProgress } from '@pm-ai/core';
+import { getWorkspaceById, getWorkspaceFeatures, getFeatureProgress, type Feature } from '@pm-ai/core';
 
 const GetWorkspaceSchema = z.object({
   workspace_id: z.string().describe('The ID of the workspace to retrieve')
@@ -30,7 +30,7 @@ export async function registerGetWorkspaceTool(server: McpServer): Promise<void>
         // Get features with progress
         const features = await getWorkspaceFeatures(input.workspace_id);
         const featuresWithProgress = await Promise.all(
-          features.map(async (feature) => {
+          features.map(async (feature: Feature) => {
             const progress = await getFeatureProgress(feature.id);
             return {
               id: feature.id,

@@ -4,7 +4,8 @@ import {
   getPlanById,
   getFeatureById,
   getTasksByPlanId,
-  getWorkspaceById
+  getWorkspaceById,
+  type Task
 } from '@pm-ai/core';
 
 /**
@@ -108,12 +109,12 @@ export async function registerExecutePlanPrompt(server: McpServer): Promise<void
         const sortedTasks = topologicalSort(tasks);
 
         // 3. Calculate statistics
-        const completedTasks = tasks.filter(t => t.status === 'done');
-        const inProgressTasks = tasks.filter(t => t.status === 'review');
-        const pendingTasks = tasks.filter(t => t.status === 'planned');
+        const completedTasks = tasks.filter((t: Task) => t.status === 'done');
+        const inProgressTasks = tasks.filter((t: Task) => t.status === 'review');
+        const pendingTasks = tasks.filter((t: Task) => t.status === 'planned');
 
         // 4. Find first pending task
-        const firstPendingTask = sortedTasks.find(t => t.status === 'planned');
+        const firstPendingTask = sortedTasks.find((t: Task) => t.status === 'planned');
 
         // 5. Build instruction message
         return {
@@ -155,7 +156,7 @@ ${sortedTasks.map((task, index) => {
 
   // Find dependency task titles
   const depTitles = deps.map((depId: string) => {
-    const depTask = tasks.find(t => t.id === depId);
+    const depTask = tasks.find((t: Task) => t.id === depId);
     return depTask ? `"${depTask.title}"` : `Unknown (${depId})`;
   });
 
@@ -174,7 +175,7 @@ ${sortedTasks.map((task, index) => {
 
 ${task.status === 'done' ? '✨ **This task is completed.**' :
   task.status === 'review' ? '🔄 **This task is currently in progress.**' :
-  deps.length > 0 && deps.some((d: string) => !tasks.find(t => t.id === d && t.status === 'done')) ?
+  deps.length > 0 && deps.some((d: string) => !tasks.find((t: Task) => t.id === d && t.status === 'done')) ?
     '⚠️ **Blocked:** Waiting for dependencies to complete.' :
     '✅ **Ready to start.**'}
 `;

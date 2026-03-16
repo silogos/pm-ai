@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getAllWorkspaces, getWorkspaceFeatures, getFeatureProgress } from '@pm-ai/core';
+import { getAllWorkspaces, getWorkspaceFeatures, getFeatureProgress, type Workspace, type Feature } from '@pm-ai/core';
 
 const ListWorkspacesSchema = z.object({
   include_features: z.boolean().optional().default(false).describe('Whether to include features in the response')
@@ -19,10 +19,10 @@ export async function registerListWorkspacesTool(server: McpServer): Promise<voi
 
         if (input.include_features) {
           workspacesWithFeatures = await Promise.all(
-            workspaces.map(async (workspace) => {
+            workspaces.map(async (workspace: Workspace) => {
               const features = await getWorkspaceFeatures(workspace.id);
               const featuresWithProgress = await Promise.all(
-                features.map(async (feature) => {
+                features.map(async (feature: Feature) => {
                   const progress = await getFeatureProgress(feature.id);
                   return {
                     id: feature.id,

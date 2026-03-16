@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { scanWorkspace, scanCurrentWorkspace, getWorkspaceStatistics } from '@pm-ai/core';
+import { scanWorkspace, scanCurrentWorkspace, getWorkspaceStatistics, type Feature } from '@pm-ai/core';
 
 const ScanWorkspaceSchema = z.object({
   workspace_path: z.string().optional().describe('Path to scan for PM-AI features (defaults to current directory)'),
@@ -30,7 +30,7 @@ export async function registerScanWorkspaceTool(server: McpServer): Promise<void
                 total_features: overview.totalFeatures,
                 statistics: stats
               },
-              features: overview.features.map(f => ({
+              features: overview.features.map((f) => ({
                 id: f.id,
                 name: f.name,
                 workspace_id: f.workspaceId,
@@ -83,7 +83,7 @@ export async function registerScanCurrentWorkspaceTool(server: McpServer): Promi
                 total_features: overview.totalFeatures,
                 statistics: stats
               },
-              features: overview.features.map(f => ({
+              features: overview.features.map((f) => ({
                 id: f.id,
                 name: f.name,
                 workspace_id: f.workspaceId,

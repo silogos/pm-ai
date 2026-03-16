@@ -167,7 +167,7 @@ export async function registerInjectClaudeMdTool(server: McpServer): Promise<voi
               const remainingContent = existingContent.substring(oldHeadingIndex);
               const nextHeadingMatch = remainingContent.match(/\n[^#]\n# /);
               endMarkerIndex = nextHeadingMatch
-                ? oldHeadingIndex + nextHeadingMatch.index
+                ? oldHeadingIndex + (nextHeadingMatch.index ?? 0)
                 : existingContent.length;
               hasPmAiSection = true;
             }

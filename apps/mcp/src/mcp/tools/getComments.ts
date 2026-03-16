@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { getComments } from '@pm-ai/core';
+import { getComments, type TaskComment } from '@pm-ai/core';
 
 const GetCommentsSchema = z.object({
   task_id: z.string().describe('The ID of the task to get comments for')
@@ -22,7 +22,7 @@ export async function registerGetCommentsTool(server: McpServer): Promise<void> 
               success: true,
               task_id: input.task_id,
               count: comments.length,
-              comments: comments.map(comment => ({
+              comments: comments.map((comment: TaskComment) => ({
                 id: comment.id,
                 task_id: comment.taskId,
                 content: comment.content,
