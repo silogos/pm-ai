@@ -1,5 +1,5 @@
 {
-  "name": "@pm-ai/cli",
+  "name": "@silogos/pm-ai",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,6 +15,7 @@
     "@pm-ai/api": "workspace:*",
     "@pm-ai/config": "workspace:*",
     "@pm-ai/core": "workspace:*",
+    "@pm-ai/mcp": "workspace:*",
     "cac": "^7.0.0"
   },
   "devDependencies": {

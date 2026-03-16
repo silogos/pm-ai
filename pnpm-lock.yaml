@@ -52,7 +52,7 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
-  apps/cli:
+  apps/app:
     dependencies:
       '@pm-ai/api':
         specifier: workspace:*
@@ -63,6 +63,9 @@ importers:
       '@pm-ai/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@pm-ai/mcp':
+        specifier: workspace:*
+        version: link:../mcp
       cac:
         specifier: ^7.0.0
         version: 7.0.0

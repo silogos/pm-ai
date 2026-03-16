@@ -7,6 +7,7 @@ import { progressCommand } from './commands/progress.js';
 import { configSetCommand, configGetCommand, configEditCommand } from './commands/config.js';
 import { serverCommand } from './commands/server.js';
 import { dbMigrateCommand } from './commands/dbMigrate.js';
+import { mcpCommand } from './commands/mcp.js';
 
 const cli = cac('pm-ai');
 
@@ -19,6 +20,11 @@ cli
 cli
   .command('db:migrate', 'Run database migrations')
   .action(() => dbMigrateCommand());
+
+// MCP command
+cli
+  .command('mcp', 'Start PM-AI MCP Server for Claude integration')
+  .action(() => mcpCommand());
 
 // Feature commands
 cli
