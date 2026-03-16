@@ -6,7 +6,7 @@ Thank you for your interest in contributing to PM-AI! This document provides gui
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+ and pnpm
 - Git
 
 ### Getting Started
@@ -20,18 +20,12 @@ cd pm-ai
 
 3. Install dependencies:
 ```bash
-npm install
+pnpm install
 ```
 
-4. Generate and run database migrations:
+4. Build the project:
 ```bash
-npm run db:generate
-npm run db:migrate
-```
-
-5. Build the project:
-```bash
-npm run build
+pnpm build
 ```
 
 ## Development Workflow
@@ -39,36 +33,43 @@ npm run build
 ### Running in Development Mode
 
 ```bash
-npm run dev
-```
+# Start all services
+pnpm dev
 
-This will start the MCP server with TypeScript compilation on the fly.
+# Start specific services
+pnpm dev:api          # Start API server only
+pnpm dev:web          # Start web dashboard only
+pnpm dev:mcp          # Start MCP server only
+```
 
 ### Database Changes
 
-If you modify the database schema (`src/db/schema.ts`):
+If you modify the database schema (`packages/core/src/db/schema.ts`):
 
 1. Generate new migrations:
 ```bash
-npm run db:generate
+pnpm db:generate
 ```
 
-2. Apply migrations:
+2. Apply migrations (auto-applied on start, or manually):
 ```bash
-npm run db:migrate
+pnpm db:migrate
 ```
 
 3. Test your changes before committing
 
-### Creating a New Project
-
-To test the server, you can create a project:
+### CLI Usage
 
 ```bash
-npm run create-project
-```
+# Show all CLI commands
+pnpm pm-ai --help
 
-Follow the prompts to enter a project name.
+# Start the API server
+pnpm pm-ai server
+
+# Initialize PM-AI in current folder
+pnpm pm-ai init
+```
 
 ## Code Style
 
@@ -82,12 +83,20 @@ Follow the prompts to enter a project name.
 
 ### Code Organization
 
-- **Services**: Business logic in `src/services/`
-- **MCP Tools**: Tool implementations in `src/mcp/tools/`
-- **MCP Resources**: Resource implementations in `src/mcp/resources/`
-- **MCP Prompts**: Prompt implementations in `src/mcp/prompts/`
-- **Utilities**: Shared utilities in `src/utils/`
-- **Database**: Schema and client in `src/db/`
+**Monorepo Structure:**
+- **packages/core**: Domain logic, database client, and schema
+- **packages/utils**: Shared utilities (graph algorithms, helpers)
+- **apps/api**: REST API server with Hono
+- **apps/cli**: Command-line interface with CAC
+- **apps/mcp**: MCP server for Claude/AI integration
+- **apps/web**: React web dashboard
+
+**MCP Server Organization:**
+- **Tools**: `apps/mcp/src/mcp/tools/` - Interactive MCP operations
+- **Resources**: `apps/mcp/src/mcp/resources/` - Read-only data access
+- **Prompts**: `apps/mcp/src/mcp/prompts/` - Reusable AI prompts
+- **Registration**: Each folder has an `index.ts` that exports `register*` function
+- **Database**: Schema and client in `packages/core/src/db/`
 
 ### Naming Conventions
 
@@ -119,11 +128,44 @@ docs: update README with new features
 
 ### Adding a New MCP Tool
 
-1. Create the tool file in `src/mcp/tools/yourTool.ts`
+1. Create the tool file in `apps/mcp/src/mcp/tools/yourTool.ts`
 2. Follow the existing pattern from other tools
 3. Use Zod for input validation
-4. Register the tool in `src/index.ts`
+4. Register the tool in `apps/mcp/src/mcp/tools/index.ts`
 5. Update the README with documentation
+
+Example tool structure:
+```typescript
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+const YourToolSchema = z.object({
+  // Define your schema
+});
+
+export async function registerYourTool(server: McpServer): Promise<void> {
+  server.tool(
+    'your_tool_name',
+    'Tool description',
+    YourToolSchema.shape,
+    async (input) => {
+      // Implement your logic
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(result, null, 2)
+        }]
+      };
+    }
+  );
+}
+```
+
+Then add to `apps/mcp/src/mcp/tools/index.ts`:
+```typescript
+await registerYourTool(server);
+console.error('Tool registered: your_tool_name');
+```
 
 Example tool structure:
 ```typescript
@@ -154,17 +196,45 @@ export async function registerYourTool(server: McpServer): Promise<void> {
 
 ### Adding a New MCP Resource
 
-1. Create the resource file in `src/mcp/resources/yourResource.ts`
+1. Create the resource file in `apps/mcp/src/mcp/resources/yourResource.ts`
 2. Use `ResourceTemplate` for dynamic URIs
-3. Register the resource in `src/index.ts`
+3. Register the resource in `apps/mcp/src/mcp/resources/index.ts`
 4. Update the README with documentation
+
+Example resource structure:
+```typescript
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+export async function registerYourResource(server: McpServer): Promise<void> {
+  server.resource(
+    'your_resource',
+    'pmai://your-resource/{param}',
+    async (uri) => {
+      // Implement your logic
+      return {
+        contents: [{
+          uri: uri.href,
+          text: JSON.stringify(result, null, 2)
+        }]
+      };
+    }
+  );
+}
+```
+
+Then add to `apps/mcp/src/mcp/resources/index.ts`:
+```typescript
+await registerYourResource(server);
+console.error('Resource registered: your_resource');
+```
 
 ### Adding a New Service
 
-1. Create the service file in `src/services/yourService.ts`
+1. Create the service file in `packages/core/src/services/yourService.ts`
 2. Import the database client from `../db/client.js`
 3. Export functions with clear names and return types
 4. Handle errors appropriately
+5. Update `packages/core/src/index.ts` to export new functions
 
 ## Testing
 

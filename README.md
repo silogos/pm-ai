@@ -91,14 +91,20 @@ git clone https://github.com/silogos/pm-ai.git
 cd pm-ai
 pnpm install
 pnpm build
-./run-dev.sh
+pnpm dev
 ```
 
 **Services:**
 - API: `http://localhost:8787`
 - Web Dashboard: `http://localhost:6363`
+- MCP Server: Available via built dist files
 
-**MCP Server only:** `pnpm dev:mcp`
+**Start specific services:**
+```bash
+pnpm dev:api          # Start API server only
+pnpm dev:web          # Start web dashboard only
+pnpm dev:mcp          # Start MCP server only
+```
 
 ## Setup with Claude
 
@@ -229,19 +235,33 @@ pm-ai/
 │   └── utils/      # Shared utilities
 ├── apps/
 │   ├── api/        # REST API (Hono)
+│   ├── cli/        # Command-line interface
 │   ├── mcp/        # MCP Server
-│   └── web/        # Web Dashboard
-└── run-dev.sh      # Start all services
+│   └── web/        # Web Dashboard (React + Vite)
+└── turbo.json      # Turborepo configuration
 ```
 
 **Key Technologies:**
 - **Monorepo**: Turborepo for efficient builds
 - **Database**: SQLite with libSQL (no native dependencies)
 - **API**: Hono HTTP framework
-- **Web**: React + Vite for dashboard
+- **Web**: React 19 + Vite for dashboard
 - **MCP**: Model Context Protocol SDK
+- **CLI**: CAC (Command And Conquer) framework
 
 **Database Location:** `~/.config/pm-ai/pmai.db`
+
+**CLI Usage:**
+```bash
+# Show all CLI commands
+pnpm pm-ai --help
+
+# Example: Start the API server
+pnpm pm-ai server
+
+# Example: Initialize PM-AI in current folder
+pnpm pm-ai init
+```
 
 ## Documentation
 

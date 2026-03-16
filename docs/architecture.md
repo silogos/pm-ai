@@ -3,13 +3,14 @@
 ## Tech Stack
 
 - **Runtime**: Node.js 18+
-- **Package Manager**: pnpm
-- **Build Tool**: Turborepo
-- **Language**: TypeScript
+- **Package Manager**: pnpm 10+
+- **Build Tool**: Turborepo 2+
+- **Language**: TypeScript 5+
 - **Database**: SQLite with libSQL client
 - **ORM**: Drizzle ORM
-- **API Server**: Hono
-- **Web Framework**: React + Vite
+- **API Server**: Hono 4+
+- **CLI Framework**: CAC (Command And Conquer)
+- **Web Framework**: React 19 + Vite 7+
 - **MCP SDK**: Model Context Protocol SDK
 
 ## Project Structure
@@ -30,14 +31,16 @@ pm-ai/
 │   │   └── src/
 │   │       └── server/
 │   │           └── routes/ # API routes
+│   ├── cli/               # Command-line interface (CAC)
+│   │   └── src/
+│   │       └── index.ts   # CLI entry point
 │   ├── mcp/               # MCP server
 │   │   └── src/
 │   │       ├── mcp/
-│   │       │   ├── tools/     # MCP tools
-│   │       │   ├── prompts/   # MCP prompts
-│   │       │   └── resources/ # MCP resources
+│   │       │   ├── tools/     # MCP tools (with index.ts)
+│   │       │   ├── prompts/   # MCP prompts (with index.ts)
+│   │       │   └── resources/ # MCP resources (with index.ts)
 │   │       ├── config/    # Configuration management
-│   │       ├── cli/       # CLI commands
 │   │       └── index.ts   # MCP server entry
 │   └── web/               # React web dashboard
 │       └── src/
@@ -46,8 +49,7 @@ pm-ai/
 │           └── main.tsx
 ├── package.json           # Root package.json
 ├── turbo.json            # Turborepo config
-├── tsconfig.base.json    # Base TypeScript config
-└── run-dev.sh            # Start all services
+└── tsconfig.base.json    # Base TypeScript config
 ```
 
 ## Core Components
@@ -82,8 +84,16 @@ Model Context Protocol server:
 
 - **Tools**: Interactive operations (init_project, save_plan, update_task, etc.)
 - **Resources**: Read-only data access (plans, tasks, progress)
-- **Prompts**: Reusable AI prompts (breakdown_markdown_plan)
-- **CLI**: Command-line interface for local development
+- **Prompts**: Reusable AI prompts (breakdown_markdown_plan, execute_plan)
+- **Modular Registration**: Each category (tools/prompts/resources) has its own index.ts for registration
+
+### Apps/CLI
+
+Command-line interface built with CAC:
+
+- `pm-ai init` - Initialize PM-AI in current folder
+- `pm-ai server` - Start the API server
+- `pm-ai dashboard` - Open the web dashboard
 
 ### Apps/Web
 
