@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { init, DEFAULT_DB_PATH } from '@pm-ai/core'
+import { isProduction } from '@pm-ai/utils'
 import { apiRoutes } from './routes/index.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -49,12 +50,11 @@ export async function createWebServer(config: WebServerConfig = {}): Promise<Web
 
   // Serve static files from web/dist ONLY in production mode
   // Default to production, set NODE_ENV=development for development
-  const isProduction = process.env.NODE_ENV !== 'development'
   const distPath = path.join(__dirname, './web')
 
   // Only serve static files in production (when web dist is copied to api dist/web)
   const fs = await import('fs')
-  if (isProduction && fs.existsSync(distPath)) {
+  if (isProduction() && fs.existsSync(distPath)) {
     // SPA fallback - serve index.html for non-API routes
     app.get('*', async (c) => {
     // Skip API routes and health check
