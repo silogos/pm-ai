@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs';
 import { homedir } from 'os';
+import { DEFAULT_DB_PATH } from '../config/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 let __dirname = path.dirname(__filename);
@@ -30,10 +31,9 @@ function getConnection(config: DatabaseConfig): string {
     ? ':memory:'
     : config.path;
 
-  // If no path provided, use local database in src/db
-  // __dirname points to package root after adjustment
+  // If no path provided, use DEFAULT_DB_PATH (from config/database.ts)
   if (!dbPath) {
-    dbPath = path.join(__dirname, 'src', 'db', 'pm-ai.db');
+    dbPath = DEFAULT_DB_PATH;
   }
 
   // Expand ~ to home directory
@@ -102,12 +102,12 @@ export async function init(config: DatabaseConfig = {}): Promise<ReturnType<type
 }
 
 /**
- * Copy template database (no-op - always using local database now)
+ * Copy template database (deprecated - using isProduction-based paths)
  *
  * @returns false (no-op)
  */
 export async function copyTemplateDatabase(): Promise<boolean> {
-  console.error('[DB] Using local database at ./src/db/pm-ai.db');
+  console.error('[DB] copyTemplateDatabase is deprecated - using isProduction-based paths');
   return false;
 }
 

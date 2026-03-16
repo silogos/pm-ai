@@ -100,11 +100,11 @@ export async function createWebServer(config: WebServerConfig = {}): Promise<Web
   // Determine port - use PORT env var or fixedPort config or default to 8787
   const port = config.fixedPort || parseInt(process.env.PORT || '8787', 10);
 
-  // Start server - bind to all interfaces for better compatibility
+  // Start server - bind to localhost for security
   const server = serve({
     fetch: app.fetch,
-    port
-    // Don't set hostname - let OS decide
+    port,
+    hostname: '127.0.0.1'
   });
 
   server.on('error', (err: any) => {

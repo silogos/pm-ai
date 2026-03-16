@@ -9,7 +9,6 @@ import { registerTools } from './mcp/tools/index.js';
 import { registerPrompts } from './mcp/prompts/index.js';
 import { registerResources } from './mcp/resources/index.js';
 import { getConfig } from '@pm-ai/config';
-import { copyTemplateDatabase } from '@pm-ai/core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,13 +43,10 @@ async function main() {
     console.error('⚠️  Starting server anyway, but AI may not understand PM-AI workflow.');
   }
 
-  // Initialize database (uses local ./src/db/pm-ai.db by default)
-  await copyTemplateDatabase();
-
   // Initialize database
-  // Pass path only if provided in config, otherwise uses local database
+  // Use the database path from config (which uses isProduction to determine path)
   await init({
-    ...(config.dbPath ? { path: config.dbPath } : {}),
+    path: config.dbPath,
   });
   const server = new McpServer({
     name: 'pm-ai-server',

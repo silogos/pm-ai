@@ -19,7 +19,9 @@
     "db:generate": "turbo run db:generate --filter=@pm-ai/db",
     "db:migrate": "turbo run db:migrate --filter=@pm-ai/db",
     "clean": "rm -rf apps/*/dist packages/*/dist node_modules/.cache",
-    "pm-ai": "node apps/app/dist/index.js"
+    "pm-ai": "node apps/app/dist/index.js",
+    "link:global": "cd apps/app && pnpm link --global",
+    "unlink:global": "cd apps/app && pnpm unlink --global"
   },
   "devDependencies": {
     "turbo": "^2.8.15",

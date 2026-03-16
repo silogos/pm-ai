@@ -1,17 +1,18 @@
 import { join } from 'path';
 import { homedir } from 'os';
+import { isProduction } from '@pm-ai/utils';
 
 /**
  * Single source of truth for PM-AI database path
  * Using 'pmai.db' (without hyphen) for better filesystem compatibility
  *
- * For development: Uses project root if PMAI_DEV=1 is set
- * For production: Uses ~/.config/pm-ai/pmai.db
+ * For development (!isProduction): Uses local ./src/db/pm-ai.db
+ * For production (isProduction): Uses ~/.config/pm-ai/pmai.db
  */
 const getDbPath = () => {
-  if (process.env.PMAI_DEV === '1') {
-    // Use project root for development
-    return join(process.cwd(), 'pmai-dev.db');
+  if (!isProduction()) {
+    // Use local database for development
+    return join(process.cwd(), 'packages', 'core', 'src', 'db', 'pm-ai.db');
   }
   return join(homedir(), '.config', 'pm-ai', 'pmai.db');
 };
