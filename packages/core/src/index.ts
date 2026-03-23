@@ -65,7 +65,8 @@ export {
   getAllFeatures,
   updateFeatureDescription,
   touchFeature,
-  getFeaturesByWorkspace
+  getFeaturesByWorkspace,
+  deleteFeature
 } from './services/features/index.js';
 
 // Plan services
@@ -73,7 +74,8 @@ export {
   savePlan,
   getPlans,
   getPlanById,
-  updatePlan
+  updatePlan,
+  deletePlan
 } from './services/plans/index.js';
 
 // Task services

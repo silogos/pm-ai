@@ -85,3 +85,13 @@ export async function getFeaturesByWorkspace(workspaceId: string): Promise<Featu
   const db = getDb();
   return await db.select().from(features).where(eq(features.workspaceId, workspaceId));
 }
+
+/**
+ * Delete a feature by ID
+ * Note: Database CASCADE DELETE will automatically remove all associated plans and tasks
+ */
+export async function deleteFeature(featureId: string): Promise<boolean> {
+  const db = getDb();
+  await db.delete(features).where(eq(features.id, featureId));
+  return true;
+}

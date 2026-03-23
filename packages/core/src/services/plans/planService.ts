@@ -51,3 +51,13 @@ export async function updatePlan(planId: string, title?: string, markdown?: stri
     .returning();
   return result[0] || null;
 }
+
+/**
+ * Delete a plan by ID
+ * Note: Database CASCADE DELETE will automatically remove all associated tasks
+ */
+export async function deletePlan(planId: string): Promise<boolean> {
+  const db = getDb();
+  await db.delete(plans).where(eq(plans.id, planId));
+  return true;
+}

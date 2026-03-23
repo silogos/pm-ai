@@ -40,6 +40,7 @@ export const featuresApi = {
     api.get<FeaturesResponse>(workspaceId ? `/workspaces/${workspaceId}/features` : '/features'),
   getById: (id: string) => api.get<FeatureResponse>(`/features/${id}`),
   create: (data: CreateFeatureRequest) => api.post<FeatureResponse>('/features', data),
+  delete: (id: string) => api.delete(`/features/${id}`),
   getPlans: (id: string) => api.get<PlansResponse>(`/features/${id}/plans`),
   getTasks: (id: string, status?: string, priority?: string) =>
     api.get<TasksResponse>(`/features/${id}/tasks`, {
@@ -53,6 +54,7 @@ export const featuresApi = {
 export const plansApi = {
   getById: (id: string) => api.get<PlanResponse>(`/plans/${id}`),
   create: (data: CreatePlanRequest) => api.post<PlanResponse>('/plans', data),
+  delete: (id: string) => api.delete(`/plans/${id}`),
   getTasks: (id: string) => api.get<TasksResponse>(`/plans/${id}/tasks`),
   getCriticalPath: (id: string) => api.get<CriticalPathResponse>(`/plans/${id}/critical-path`)
 };

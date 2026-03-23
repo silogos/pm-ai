@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { featuresApi } from '../services/api';
+import DeleteConfirmDialog from './DeleteConfirmDialog';
 import type { Plan } from '../types';
 
 type Tab = 'list' | 'context';
 
 export default function FeatureDetail() {
   const { featureId } = useParams<{ featureId: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('list');
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState(false);
 
   // Fetch feature details
   const { data: featureData, isLoading: featureLoading, error: featureError } = useQuery({
@@ -44,6 +48,30 @@ export default function FeatureDetail() {
     }
   };
 
+  // Delete feature mutation
+  const deleteFeatureMutation = useMutation({
+    mutationFn: async () => {
+      if (!featureId) throw new Error('Feature ID is required');
+      await featuresApi.delete(featureId);
+    },
+    onSuccess: () => {
+      // Navigate back to workspace after successful deletion
+      if (feature?.workspaceId) {
+        queryClient.invalidateQueries({ queryKey: ['features', feature.workspaceId] });
+        navigate(`/workspace/${feature.workspaceId}`);
+      }
+    }
+  });
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteFeatureMutation.mutateAsync();
+      setDeleteDialog(false);
+    } catch (error) {
+      console.error('Failed to delete feature:', error);
+    }
+  };
+
   if (featureLoading) {
     return <div className="loading">Loading feature...</div>;
   }
@@ -58,11 +86,35 @@ export default function FeatureDetail() {
 
   return (
     <div className="plan-dashboard">
-      {/* Back Link */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      {/* Back Link and Delete Button */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <Link to={`/workspace/${feature.workspaceId}`} style={{ color: '#1976d2', textDecoration: 'none' }}>
           &larr; Back to Workspace
         </Link>
+        <button
+          onClick={() => setDeleteDialog(true)}
+          className="btn"
+          disabled={deleteFeatureMutation.isPending}
+          style={{
+            padding: '0.5rem 1rem',
+            fontSize: '0.875rem',
+            backgroundColor: '#dc3545',
+            color: 'white',
+            border: '1px solid #dc3545',
+            opacity: deleteFeatureMutation.isPending ? 0.6 : 1,
+            cursor: deleteFeatureMutation.isPending ? 'not-allowed' : 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            if (!deleteFeatureMutation.isPending) {
+              e.currentTarget.style.backgroundColor = '#c82333';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#dc3545';
+          }}
+        >
+          {deleteFeatureMutation.isPending ? 'Deleting...' : 'Delete Feature'}
+        </button>
       </div>
 
       {/* Header */}
@@ -170,6 +222,17 @@ export default function FeatureDetail() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        isOpen={deleteDialog}
+        title="Delete Feature"
+        message="Are you sure you want to delete this feature? This action cannot be undone."
+        itemName={feature.name}
+        cascadeWarning="All associated plans and tasks will be permanently deleted."
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteDialog(false)}
+      />
     </div>
   );
 }

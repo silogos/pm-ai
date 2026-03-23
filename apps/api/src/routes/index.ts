@@ -9,12 +9,14 @@ import {
   createFeature,
   createFeatureWithDescription,
   getWorkspaceByPath,
+  deleteFeature,
   type Feature
 } from '@pm-ai/core';
 import {
   getPlans,
   getPlanById,
   savePlan,
+  deletePlan,
   type Plan
 } from '@pm-ai/core';
 import {
@@ -352,6 +354,30 @@ app.get('/features/:id/critical-path', async (c) => {
   }
 });
 
+// DELETE /api/features/:id - Delete a feature
+app.delete('/features/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+
+    // Verify feature exists before deleting
+    const feature = await getFeatureById(id);
+    if (!feature) {
+      return c.json({
+        error: {
+          message: 'Feature not found',
+          code: 'FEATURE_NOT_FOUND',
+          statusCode: 404
+        }
+      }, 404);
+    }
+
+    await deleteFeature(id);
+    return c.body(null, 204);
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
 // ==================== Plans ====================
 
 // POST /api/plans - Create a new plan
@@ -434,6 +460,30 @@ app.get('/plans/:id/critical-path', async (c) => {
     const id = c.req.param('id');
     const criticalPath = await getCriticalPath(id);
     return c.json({ critical_path: criticalPath });
+  } catch (err) {
+    return handleError(err as Error, c);
+  }
+});
+
+// DELETE /api/plans/:id - Delete a plan
+app.delete('/plans/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+
+    // Verify plan exists before deleting
+    const plan = await getPlanById(id);
+    if (!plan) {
+      return c.json({
+        error: {
+          message: 'Plan not found',
+          code: 'PLAN_NOT_FOUND',
+          statusCode: 404
+        }
+      }, 404);
+    }
+
+    await deletePlan(id);
+    return c.body(null, 204);
   } catch (err) {
     return handleError(err as Error, c);
   }
