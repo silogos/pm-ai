@@ -9,10 +9,12 @@ const GetTaskDependenciesSchema = z.object({
 });
 
 export async function registerGetTaskDependenciesTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'get_task_dependencies',
-    'Get dependency information for a task (upstream dependencies and/or downstream dependents)',
-    GetTaskDependenciesSchema.shape,
+    {
+      description: 'Get dependency information for a task (upstream dependencies and/or downstream dependents)',
+      inputSchema: GetTaskDependenciesSchema
+    },
     async (input) => {
       try {
         // Verify task exists

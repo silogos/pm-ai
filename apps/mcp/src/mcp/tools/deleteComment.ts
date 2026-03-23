@@ -7,10 +7,12 @@ const DeleteCommentSchema = z.object({
 });
 
 export async function registerDeleteCommentTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'delete_comment',
-    'Delete a comment by ID',
-    DeleteCommentSchema.shape,
+    {
+      description: 'Delete a comment by ID',
+      inputSchema: DeleteCommentSchema
+    },
     async (input: any) => {
       try {
         // Verify comment exists

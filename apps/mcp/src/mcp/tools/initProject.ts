@@ -10,10 +10,12 @@ const InitProjectSchema = z.object({
 });
 
 export async function registerInitProjectTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'init_project',
-    'Initialize a new feature in PM-AI. Use this when starting work on a new feature or component. Returns the feature ID that can be used for subsequent operations.',
-    InitProjectSchema.shape,
+    {
+      description: 'Initialize a new feature in PM-AI. Use this when starting work on a new feature or component. Returns the feature ID that can be used for subsequent operations.',
+      inputSchema: InitProjectSchema
+    },
     async (input) => {
       try {
         // Check if feature with same name already exists in workspace

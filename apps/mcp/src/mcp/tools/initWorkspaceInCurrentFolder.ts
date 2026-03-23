@@ -12,10 +12,12 @@ const InitWorkspaceInCurrentFolderSchema = z.object({
 });
 
 export async function registerInitWorkspaceInCurrentFolderTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'init_workspace_in_current_folder',
-    'Initialize PM-AI in the current working directory. Creates a workspace in the database. Use this when the user says "init pm-ai", "set up PM-AI here", "initialize PM-AI workspace", or similar.',
-    InitWorkspaceInCurrentFolderSchema.shape,
+    {
+      description: 'Initialize PM-AI in the current working directory. Creates a workspace in the database. Use this when the user says "init pm-ai", "set up PM-AI here", "initialize PM-AI workspace", or similar.',
+      inputSchema: InitWorkspaceInCurrentFolderSchema
+    },
     async (input) => {
       try {
         const currentPath = process.cwd();

@@ -9,10 +9,12 @@ const UpdatePlanSchema = z.object({
 });
 
 export async function registerUpdatePlanTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'update_plan',
-    'Update plan title and/or markdown content',
-    UpdatePlanSchema.shape,
+    {
+      description: 'Update plan title and/or markdown content',
+      inputSchema: UpdatePlanSchema
+    },
     async (input: any) => {
       try {
         // Verify plan exists

@@ -9,10 +9,12 @@ const AddTaskCommentSchema = z.object({
 });
 
 export async function registerAddTaskCommentTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'add_task_comment',
-    'Add a comment to a task',
-    AddTaskCommentSchema.shape,
+    {
+      description: 'Add a comment to a task',
+      inputSchema: AddTaskCommentSchema
+    },
     async (input) => {
       try {
         // Verify task exists

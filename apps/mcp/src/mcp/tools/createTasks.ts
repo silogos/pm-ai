@@ -17,10 +17,12 @@ const CreateTasksSchema = z.object({
 });
 
 export async function registerCreateTasksTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'create_tasks',
-    'Create multiple tasks at once for a plan',
-    CreateTasksSchema.shape,
+    {
+      description: 'Create multiple tasks at once for a plan',
+      inputSchema: CreateTasksSchema
+    },
     async (input: any) => {
       try {
         const taskIds = await saveTasks(input.plan_id, input.tasks);

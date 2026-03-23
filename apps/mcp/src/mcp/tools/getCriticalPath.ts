@@ -9,10 +9,12 @@ const GetCriticalPathSchema = z.object({
 });
 
 export async function registerGetCriticalPathTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'get_critical_path',
-    'Get the critical path (longest dependency chain) for a feature to identify bottlenecks',
-    GetCriticalPathSchema.shape,
+    {
+      description: 'Get the critical path (longest dependency chain) for a feature to identify bottlenecks',
+      inputSchema: GetCriticalPathSchema
+    },
     async (input) => {
       try {
         // Verify feature exists

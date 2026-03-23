@@ -130,10 +130,12 @@ Dashboard: http://localhost:8787
 <!-- PM-AI-END -->`;
 
 export async function registerInjectClaudeMdTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'inject_claude_md',
-    'Inject PM-AI system guide into CLAUDE.md. This adds documentation about how to work with PM-AI so AI assistants understand the workflow and available tools.',
-    InjectClaudeMdSchema.shape,
+    {
+      description: 'Inject PM-AI system guide into CLAUDE.md. This adds documentation about how to work with PM-AI so AI assistants understand the workflow and available tools.',
+      inputSchema: InjectClaudeMdSchema
+    },
     async (input) => {
       try {
         // Determine project path

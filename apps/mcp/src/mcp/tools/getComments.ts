@@ -7,10 +7,12 @@ const GetCommentsSchema = z.object({
 });
 
 export async function registerGetCommentsTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'get_comments',
-    'Get all comments for a specific task',
-    GetCommentsSchema.shape,
+    {
+      description: 'Get all comments for a specific task',
+      inputSchema: GetCommentsSchema
+    },
     async (input: any) => {
       try {
         const comments = await getComments(input.task_id);

@@ -7,10 +7,12 @@ const DeleteTaskSchema = z.object({
 });
 
 export async function registerDeleteTaskTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'delete_task',
-    'Delete a task permanently from the database',
-    DeleteTaskSchema.shape,
+    {
+      description: 'Delete a task permanently from the database',
+      inputSchema: DeleteTaskSchema
+    },
     async (input) => {
       try {
         // Verify task exists and get its info before deleting

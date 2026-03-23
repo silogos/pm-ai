@@ -7,10 +7,12 @@ const ListWorkspacesSchema = z.object({
 });
 
 export async function registerListWorkspacesTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'list_workspaces',
-    'List all workspaces in the database',
-    ListWorkspacesSchema.shape,
+    {
+      description: 'List all workspaces in the database',
+      inputSchema: ListWorkspacesSchema
+    },
     async (input: any) => {
       try {
         const workspaces = await getAllWorkspaces();

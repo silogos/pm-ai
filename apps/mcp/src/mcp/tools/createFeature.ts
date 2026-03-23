@@ -13,10 +13,12 @@ const CreateFeatureSchema = z.object({
 });
 
 export async function registerCreateFeatureTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'create_feature',
-    'Create a new feature in the current workspace. Features represent domain areas or components within your repository (e.g., "Authentication", "Checkout", "User Management").',
-    CreateFeatureSchema.shape,
+    {
+      description: 'Create a new feature in the current workspace. Features represent domain areas or components within your repository (e.g., "Authentication", "Checkout", "User Management").',
+      inputSchema: CreateFeatureSchema
+    },
     async (input) => {
       try {
         // Auto-detect workspace from current path

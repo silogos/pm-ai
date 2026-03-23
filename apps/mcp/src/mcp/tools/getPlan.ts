@@ -7,10 +7,12 @@ const GetPlanSchema = z.object({
 });
 
 export async function registerGetPlanTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'get_plan',
-    'Get a single plan by ID with full details',
-    GetPlanSchema.shape,
+    {
+      description: 'Get a single plan by ID with full details',
+      inputSchema: GetPlanSchema
+    },
     async (input: any) => {
       try {
         const plan = await getPlanById(input.plan_id);

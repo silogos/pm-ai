@@ -4,12 +4,16 @@ import { getConfig } from '@pm-ai/config';
 
 const DEFAULT_PORT = 8787;
 
+const OpenDashboardSchema = z.object({
+  project_id: z.string().uuid().optional().describe('Optional project ID to open a specific project directly')
+});
+
 export async function registerOpenDashboardTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'open_dashboard',
-    'Get instructions to open the PM-AI web dashboard in your browser. Provides a visual interface for managing projects, viewing task boards, and analyzing dependencies.',
     {
-      project_id: z.string().uuid().optional().describe('Optional project ID to open a specific project directly')
+      description: 'Get instructions to open the PM-AI web dashboard in your browser. Provides a visual interface for managing projects, viewing task boards, and analyzing dependencies.',
+      inputSchema: OpenDashboardSchema
     },
     async (args) => {
       const { project_id } = args;

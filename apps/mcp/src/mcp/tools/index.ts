@@ -17,8 +17,10 @@ import { registerGetCommentsTool } from './getComments.js';
 import { registerDeleteCommentTool } from './deleteComment.js';
 import { registerGetPlanTool } from './getPlan.js';
 import { registerUpdatePlanTool } from './updatePlan.js';
+import { registerDeletePlanTool } from './deletePlan.js';
 import { registerGetFeatureTool } from './getFeature.js';
 import { registerUpdateFeatureTool } from './updateFeature.js';
+import { registerDeleteFeatureTool } from './deleteFeature.js';
 import { registerGetWorkspaceTool } from './getWorkspace.js';
 import { registerListWorkspacesTool } from './listWorkspaces.js';
 import { registerAutoExecutePlanTool } from './autoExecutePlan.js';
@@ -89,11 +91,17 @@ export async function registerTools(server: McpServer): Promise<void> {
   await registerUpdatePlanTool(server);
   console.error('Tool registered: update_plan');
 
+  await registerDeletePlanTool(server);
+  console.error('Tool registered: delete_plan');
+
   await registerGetFeatureTool(server);
   console.error('Tool registered: get_feature');
 
   await registerUpdateFeatureTool(server);
   console.error('Tool registered: update_feature');
+
+  await registerDeleteFeatureTool(server);
+  console.error('Tool registered: delete_feature');
 
   await registerGetWorkspaceTool(server);
   console.error('Tool registered: get_workspace');

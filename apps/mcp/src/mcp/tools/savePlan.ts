@@ -21,10 +21,12 @@ const SavePlanSchema = z.object({
 });
 
 export async function registerSavePlanTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'save_plan',
-    'Save a plan with its markdown content and optional structured tasks to the database. If feature_name is provided, will create the feature if it doesn\'t exist.',
-    SavePlanSchema.shape,
+    {
+      description: 'Save a plan with its markdown content and optional structured tasks to the database. If feature_name is provided, will create the feature if it doesn\'t exist.',
+      inputSchema: SavePlanSchema
+    },
     async (input) => {
       try {
         let featureId = input.feature_id;

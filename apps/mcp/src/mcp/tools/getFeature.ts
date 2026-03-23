@@ -7,10 +7,12 @@ const GetFeatureSchema = z.object({
 });
 
 export async function registerGetFeatureTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'get_feature',
-    'Get a single feature by ID with full details',
-    GetFeatureSchema.shape,
+    {
+      description: 'Get a single feature by ID with full details',
+      inputSchema: GetFeatureSchema
+    },
     async (input: any) => {
       try {
         const feature = await getFeatureById(input.feature_id);

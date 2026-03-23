@@ -7,11 +7,15 @@ const ScanWorkspaceSchema = z.object({
   max_depth: z.number().optional().describe('Maximum depth to scan (default: 3)')
 });
 
+const ScanCurrentWorkspaceSchema = z.object({});
+
 export async function registerScanWorkspaceTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'scan_workspace',
-    'Scan the workspace for PM-AI features. Returns a list of all features found with their statistics. Use this when the user asks to "show workspace", "list all PM-AI features", or "what features are in this workspace".',
-    ScanWorkspaceSchema.shape,
+    {
+      description: 'Scan the workspace for PM-AI features. Returns a list of all features found with their statistics. Use this when the user asks to "show workspace", "list all PM-AI features", or "what features are in this workspace".',
+      inputSchema: ScanWorkspaceSchema
+    },
     async (input) => {
       try {
         const workspacePath = input.workspace_path || process.cwd();
@@ -64,10 +68,12 @@ export async function registerScanWorkspaceTool(server: McpServer): Promise<void
 }
 
 export async function registerScanCurrentWorkspaceTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'show_workspace',
-    'Quick shortcut to show all PM-AI features in the current workspace. Use when the user asks "show workspace", "list features", "what PM-AI features exist".',
-    {},
+    {
+      description: 'Quick shortcut to show all PM-AI features in the current workspace. Use when the user asks "show workspace", "list features", "what PM-AI features exist".',
+      inputSchema: ScanCurrentWorkspaceSchema
+    },
     async () => {
       try {
         const overview = await scanCurrentWorkspace();

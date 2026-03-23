@@ -8,10 +8,12 @@ const UpdateFeatureSchema = z.object({
 });
 
 export async function registerUpdateFeatureTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'update_feature',
-    'Update feature description',
-    UpdateFeatureSchema.shape,
+    {
+      description: 'Update feature description',
+      inputSchema: UpdateFeatureSchema
+    },
     async (input: any) => {
       try {
         // Verify feature exists

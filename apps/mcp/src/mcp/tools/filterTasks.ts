@@ -12,10 +12,12 @@ const FilterTasksSchema = z.object({
 });
 
 export async function registerFilterTasksTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'filter_tasks',
-    'Filter tasks by status, priority, plan ID, or any combination of these criteria',
-    FilterTasksSchema.shape,
+    {
+      description: 'Filter tasks by status, priority, plan ID, or any combination of these criteria',
+      inputSchema: FilterTasksSchema
+    },
     async (input) => {
       try {
         // Verify feature exists

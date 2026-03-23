@@ -22,10 +22,12 @@ const UpdateTaskSchema = z.object({
 });
 
 export async function registerUpdateTaskTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'update_task',
-    'Update a single field or multiple fields of an existing task',
-    UpdateTaskSchema.shape,
+    {
+      description: 'Update a single field or multiple fields of an existing task',
+      inputSchema: UpdateTaskSchema
+    },
     async (input: any) => {
       try {
         // Verify task exists

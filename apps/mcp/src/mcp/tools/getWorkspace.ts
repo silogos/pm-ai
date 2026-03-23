@@ -7,10 +7,12 @@ const GetWorkspaceSchema = z.object({
 });
 
 export async function registerGetWorkspaceTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'get_workspace',
-    'Get a single workspace by ID with full details including features',
-    GetWorkspaceSchema.shape,
+    {
+      description: 'Get a single workspace by ID with full details including features',
+      inputSchema: GetWorkspaceSchema
+    },
     async (input: any) => {
       try {
         const workspace = await getWorkspaceById(input.workspace_id);

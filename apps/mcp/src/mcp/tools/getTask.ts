@@ -7,10 +7,12 @@ const GetTaskSchema = z.object({
 });
 
 export async function registerGetTaskTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'get_task',
-    'Get a single task by ID with full details',
-    GetTaskSchema.shape,
+    {
+      description: 'Get a single task by ID with full details',
+      inputSchema: GetTaskSchema
+    },
     async (input: any) => {
       try {
         const task = await getTaskById(input.task_id);

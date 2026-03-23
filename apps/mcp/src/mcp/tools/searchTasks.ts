@@ -10,10 +10,12 @@ const SearchTasksSchema = z.object({
 });
 
 export async function registerSearchTasksTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'search_tasks',
-    'Search for tasks by keyword in title or description',
-    SearchTasksSchema.shape,
+    {
+      description: 'Search for tasks by keyword in title or description',
+      inputSchema: SearchTasksSchema
+    },
     async (input) => {
       try {
         // Verify feature exists
