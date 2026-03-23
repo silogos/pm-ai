@@ -62,10 +62,12 @@ const AutoExecutePlanSchema = z.object({
 });
 
 export async function registerAutoExecutePlanTool(server: McpServer): Promise<void> {
-  server.tool(
+  server.registerTool(
     'auto_execute_plan',
-    'Automatically execute all pending tasks in a plan. Returns tasks in execution order with full context for autonomous completion.',
-    AutoExecutePlanSchema.shape,
+    {
+      description: 'Automatically execute all pending tasks in a plan. Returns tasks in execution order with full context for autonomous completion.',
+      inputSchema: AutoExecutePlanSchema
+    },
     async (input: any) => {
       try {
         // 1. Load plan dari database
@@ -194,7 +196,13 @@ export async function registerAutoExecutePlanTool(server: McpServer): Promise<vo
             `💾 Mark as done: {"task_id": "${pending[0].id}", "status": "done"}`,
             `➡️  Proceed to next task in queue`,
             `📊 Total tasks remaining: ${pending.length}`
-          ] : ['🎉 All tasks are completed!'],
+          ] : [
+            '🎉 All tasks are completed!',
+            '',
+            '💡 Suggested next step: Commit your changes',
+            '   Say: "Please commit these changes with a descriptive commit message"',
+            '   Or use: /commit to create a conventional commit message automatically'
+          ],
           workflow: {
             phases: [
               {
